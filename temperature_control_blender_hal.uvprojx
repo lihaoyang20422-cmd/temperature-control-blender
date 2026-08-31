@@ -614,6 +614,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_storage.h</FilePath>
             </File>
+            <File>
+              <FileName>App_oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_oled.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_oled.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -649,6 +659,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\Int\Int_I2C2.h</FilePath>
             </File>
+            <File>
+              <FileName>Int_I2C1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Int\Int_I2C1.c</FilePath>
+            </File>
+            <File>
+              <FileName>Int_I2C1.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Int\Int_I2C1.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -666,6 +686,21 @@
               <FileName>drv_m24c02.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Dri\drv_m24c02.h</FilePath>
+            </File>
+            <File>
+              <FileName>driver_ssd1315.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Dri\driver_ssd1315.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver_ssd1315.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Dri\driver_ssd1315.h</FilePath>
+            </File>
+            <File>
+              <FileName>driver_ssd1315_font.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Dri\driver_ssd1315_font.h</FilePath>
             </File>
           </Files>
         </Group>

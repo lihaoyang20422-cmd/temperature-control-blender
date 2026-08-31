@@ -4,7 +4,9 @@
 #include "App_system.h"
 #include "App_m24c02.h"
 #include "App_storage.h"
+#include "App_oled.h"
 #include "bsp_pins.h"
+#include "Int_I2C1.h"
 #include "Int_I2C2.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -26,6 +28,8 @@
 #define APP_STORAGE_DEMO_TASK_STACK_SIZE    192U
 #define APP_STORAGE_DEMO_DELAY_MS           1000U
 #define APP_STORAGE_DEMO_SAVE_WAIT_MS       6000U
+#define APP_OLED_TASK_STACK_SIZE            256U
+#define APP_OLED_UPDATE_PERIOD_MS           500U
 /* 开发验证置为 1；测试完成后置为 0，避免启动时修改用户设置。 */
 #define APP_ENABLE_STORAGE_DEMO             1U
 #define APP_STORAGE_DEMO_TEMP              50
@@ -38,9 +42,11 @@ typedef enum
     APP_TASK_PRIORITY_BUZZER_TEST = tskIDLE_PRIORITY + 1U,
     APP_TASK_PRIORITY_M24C02_TEST = tskIDLE_PRIORITY + 1U,
     APP_TASK_PRIORITY_STORAGE = tskIDLE_PRIORITY + 1U,
-    APP_TASK_PRIORITY_STORAGE_DEMO = tskIDLE_PRIORITY + 1U
+    APP_TASK_PRIORITY_STORAGE_DEMO = tskIDLE_PRIORITY + 1U,
+    APP_TASK_PRIORITY_OLED = tskIDLE_PRIORITY + 1U
 } AppTaskPriority_t;
 
+static void App_OledTask(void *argument);
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument);
 #endif
@@ -58,6 +64,8 @@ static const char *App_SystemStatusName(AppMotorStatusValue_t status);
 
 void App_main(void)
 {
+    uint8_t oledReady = 0U;
+
     /* 在任何 EEPROM 或其他 I2C2 任务启动前创建总线互斥锁。 */
     if (Bsp_I2c2Init() == 0U)
     {
@@ -65,6 +73,20 @@ void App_main(void)
         for (;;)
         {
         }
+    }
+
+    /* OLED 使用 I2C1，先创建总线互斥锁，再执行 OLED 初始化。 */
+    if (Bsp_I2c1Init() == 0U)
+    {
+        debug_printfln("I2C1 bus mutex create failed");
+    }
+    else if (App_OledInit() == 0U)
+    {
+        debug_printfln("OLED init failed");
+    }
+    else
+    {
+        oledReady = 1U;
     }
 
     if (App_SystemInit() == 0U)
@@ -137,10 +159,40 @@ void App_main(void)
     }
 #endif
 
+    if (oledReady != 0U)
+    {
+        if (xTaskCreate(App_OledTask, "OLED", APP_OLED_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_OLED, NULL) != pdPASS)
+        {
+            debug_printfln("OLED task create failed");
+        }
+    }
+
     vTaskStartScheduler();
 
     for (;;)
     {
+    }
+}
+
+static void App_OledTask(void *argument)
+{
+    AppData_t dataSnapshot;
+    AppFocusState_t focusSnapshot;
+
+    (void)argument;
+
+    for (;;)
+    {
+        /* 只在锁内复制快照，I2C 刷屏放在解锁后执行，避免阻塞其他业务任务。 */
+        if (App_SystemLock(portMAX_DELAY) != 0U)
+        {
+            dataSnapshot = g_appData;
+            focusSnapshot = g_focusState;
+            App_SystemUnlock();
+            (void)App_OledUpdate(&dataSnapshot, &focusSnapshot);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(APP_OLED_UPDATE_PERIOD_MS));
     }
 }
 
