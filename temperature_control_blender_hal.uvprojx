@@ -594,6 +594,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_system.h</FilePath>
             </File>
+            <File>
+              <FileName>App_m24c02.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_m24c02.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_m24c02.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_m24c02.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -619,6 +629,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\Int\bsp_pins.h</FilePath>
             </File>
+            <File>
+              <FileName>Int_I2C2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Int\Int_I2C2.c</FilePath>
+            </File>
+            <File>
+              <FileName>Int_I2C2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Int\Int_I2C2.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -626,6 +646,18 @@
         </Group>
         <Group>
           <GroupName>Dri</GroupName>
+          <Files>
+            <File>
+              <FileName>drv_m24c02.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Dri\drv_m24c02.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_m24c02.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Dri\drv_m24c02.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>FreeRTOS</GroupName>

@@ -2,7 +2,9 @@
 #include "Com_debug.h"
 #include "App_buzzer.h"
 #include "App_system.h"
+#include "App_m24c02.h"
 #include "bsp_pins.h"
+#include "Int_I2C2.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -14,24 +16,42 @@
 #define APP_SYSTEM_TEST_TARGET_TIME        10U
 #define APP_BUZZER_TEST_INTERVAL_MS        5000U
 #define APP_BUZZER_TEST_LONG_MS            1000U
-/* 置为 1 可启用蜂鸣器测试任务，默认关闭以避免影响系统测试。 */
-#define APP_ENABLE_BUZZER_TEST             0U
+/* 开发阶段置为 1，验证完成后置为 0 即可关闭 EEPROM 上电自检。 */
+#define APP_ENABLE_M24C02_TEST             0U
+#define APP_ENABLE_SYSTEM_TEST             0U
+#define APP_M24C02_TEST_TASK_STACK_SIZE    160U
+#define APP_M24C02_TEST_START_DELAY_MS     100U
 
 typedef enum
 {
     APP_TASK_PRIORITY_SYSTEM_TEST = tskIDLE_PRIORITY + 1U,
-    APP_TASK_PRIORITY_BUZZER_TEST = tskIDLE_PRIORITY + 1U
+    APP_TASK_PRIORITY_BUZZER_TEST = tskIDLE_PRIORITY + 1U,
+    APP_TASK_PRIORITY_M24C02_TEST = tskIDLE_PRIORITY + 1U
 } AppTaskPriority_t;
 
+#if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument);
-#if (APP_ENABLE_BUZZER_TEST != 0U)
-static void App_BuzzerTestTask(void *argument);
 #endif
+#if (APP_ENABLE_M24C02_TEST != 0U)
+static void App_M24C02TestTask(void *argument);
+static const char *App_M24C02TestResultName(AppM24C02TestResult_t result);
+#endif
+#if (APP_ENABLE_SYSTEM_TEST != 0U)
 static const char *App_SystemFocusLine(AppFocusItem_t focus);
 static const char *App_SystemStatusName(AppMotorStatusValue_t status);
+#endif
 
 void App_main(void)
 {
+    /* 在任何 EEPROM 或其他 I2C2 任务启动前创建总线互斥锁。 */
+    if (Bsp_I2c2Init() == 0U)
+    {
+        debug_printfln("I2C2 bus mutex create failed");
+        for (;;)
+        {
+        }
+    }
+
     if (App_SystemInit() == 0U)
     {
         debug_printfln("System state mutex create failed");
@@ -48,6 +68,7 @@ void App_main(void)
         }
     }
 
+#if (APP_ENABLE_SYSTEM_TEST != 0U)
     if (xTaskCreate(App_SystemTestTask, "SystemTest", APP_SYSTEM_TEST_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_SYSTEM_TEST, NULL) != pdPASS)
     {
         debug_printfln("FreeRTOS system test task create failed");
@@ -55,11 +76,12 @@ void App_main(void)
         {
         }
     }
+#endif
 
-#if (APP_ENABLE_BUZZER_TEST != 0U)
-    if (xTaskCreate(App_BuzzerTestTask, "BuzzerTest", APP_BUZZER_TEST_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_BUZZER_TEST, NULL) != pdPASS)
+#if (APP_ENABLE_M24C02_TEST != 0U)
+    if (xTaskCreate(App_M24C02TestTask, "M24C02Test", APP_M24C02_TEST_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_M24C02_TEST, NULL) != pdPASS)
     {
-        debug_printfln("FreeRTOS buzzer test task create failed");
+        debug_printfln("M24C02 test task create failed");
         for (;;)
         {
         }
@@ -73,6 +95,7 @@ void App_main(void)
     }
 }
 
+#if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument)
 {
     AppData_t dataSnapshot = { 0 };
@@ -160,7 +183,9 @@ static void App_SystemTestTask(void *argument)
         }
     }
 }
+#endif
 
+#if (APP_ENABLE_SYSTEM_TEST != 0U)
 static const char *App_SystemFocusLine(AppFocusItem_t focus)
 {
     switch (focus)
@@ -178,7 +203,9 @@ static const char *App_SystemFocusLine(AppFocusItem_t focus)
             return "FOCUS : TEMP SPEED TIME";
     }
 }
+#endif
 
+#if (APP_ENABLE_SYSTEM_TEST != 0U)
 static const char *App_SystemStatusName(AppMotorStatusValue_t status)
 {
     switch (status)
@@ -196,24 +223,58 @@ static const char *App_SystemStatusName(AppMotorStatusValue_t status)
             return "UNKNOWN";
     }
 }
+#endif
 
-#if (APP_ENABLE_BUZZER_TEST != 0U)
-static void App_BuzzerTestTask(void *argument)
+#if (APP_ENABLE_M24C02_TEST != 0U)
+static void App_M24C02TestTask(void *argument)
 {
+    AppM24C02TestResult_t result;
+
     (void)argument;
 
-    for (;;)
-    {
-        vTaskDelay(pdMS_TO_TICKS(APP_BUZZER_TEST_INTERVAL_MS));
-        debug_printfln("Buzzer short beep");
-        App_BuzzerBeepShort();
+    /* 错开系统任务首次打印，避免两段串口输出相互穿插。 */
+    vTaskDelay(pdMS_TO_TICKS(APP_M24C02_TEST_START_DELAY_MS));
+    result = App_M24C02SelfTest();
 
-        vTaskDelay(pdMS_TO_TICKS(APP_BUZZER_TEST_INTERVAL_MS));
-        debug_printfln("Buzzer long beep start");
-        App_BuzzerSetContinuous(1U);
-        vTaskDelay(pdMS_TO_TICKS(APP_BUZZER_TEST_LONG_MS));
-        App_BuzzerSetContinuous(0U);
-        debug_printfln("Buzzer long beep stop");
+    if (result == APP_M24C02_TEST_OK)
+    {
+        debug_printfln("M24C02 self-test PASS, address=0xF0, data=11 22 33 44 55");
+    }
+    else
+    {
+        Com_DebugPrintf("M24C02 self-test FAIL: %s (%d)\r\n",
+                        App_M24C02TestResultName(result),
+                        (int)result);
+    }
+
+    /* 自检只执行一次，结束后删除自身并释放任务栈。 */
+    vTaskDelete(NULL);
+}
+
+static const char *App_M24C02TestResultName(AppM24C02TestResult_t result)
+{
+    switch (result)
+    {
+        case APP_M24C02_TEST_OK:
+            return "OK";
+        case APP_M24C02_TEST_DEVICE_NOT_READY:
+            return "DEVICE_NOT_READY";
+        case APP_M24C02_TEST_BACKUP_READ_FAILED:
+            return "BACKUP_READ_FAILED";
+        case APP_M24C02_TEST_WRITE_FAILED:
+            return "WRITE_FAILED";
+        case APP_M24C02_TEST_READ_FAILED:
+            return "READ_FAILED";
+        case APP_M24C02_TEST_DATA_MISMATCH:
+            return "DATA_MISMATCH";
+        case APP_M24C02_TEST_RESTORE_WRITE_FAILED:
+            return "RESTORE_WRITE_FAILED";
+        case APP_M24C02_TEST_RESTORE_READ_FAILED:
+            return "RESTORE_READ_FAILED";
+        case APP_M24C02_TEST_RESTORE_MISMATCH:
+            return "RESTORE_MISMATCH";
+        default:
+            return "UNKNOWN";
     }
 }
 #endif
