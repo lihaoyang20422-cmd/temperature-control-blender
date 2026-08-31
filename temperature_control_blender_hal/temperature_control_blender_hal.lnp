@@ -33,6 +33,7 @@
 "temperature_control_blender_hal\system_stm32f1xx.o"
 "temperature_control_blender_hal\app_buzzer.o"
 "temperature_control_blender_hal\app_main.o"
+"temperature_control_blender_hal\app_system.o"
 "temperature_control_blender_hal\com_debug.o"
 "temperature_control_blender_hal\croutine.o"
 "temperature_control_blender_hal\event_groups.o"

@@ -584,6 +584,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_main.h</FilePath>
             </File>
+            <File>
+              <FileName>App_system.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_system.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_system.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_system.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
