@@ -35,6 +35,7 @@
 "temperature_control_blender_hal\app_main.o"
 "temperature_control_blender_hal\app_system.o"
 "temperature_control_blender_hal\app_m24c02.o"
+"temperature_control_blender_hal\app_storage.o"
 "temperature_control_blender_hal\com_debug.o"
 "temperature_control_blender_hal\int_i2c2.o"
 "temperature_control_blender_hal\drv_m24c02.o"

@@ -3,6 +3,7 @@
 #include "App_buzzer.h"
 #include "App_system.h"
 #include "App_m24c02.h"
+#include "App_storage.h"
 #include "bsp_pins.h"
 #include "Int_I2C2.h"
 #include "FreeRTOS.h"
@@ -21,16 +22,30 @@
 #define APP_ENABLE_SYSTEM_TEST             0U
 #define APP_M24C02_TEST_TASK_STACK_SIZE    160U
 #define APP_M24C02_TEST_START_DELAY_MS     100U
+#define APP_STORAGE_TASK_STACK_SIZE         192U
+#define APP_STORAGE_DEMO_TASK_STACK_SIZE    192U
+#define APP_STORAGE_DEMO_DELAY_MS           1000U
+#define APP_STORAGE_DEMO_SAVE_WAIT_MS       6000U
+/* 开发验证置为 1；测试完成后置为 0，避免启动时修改用户设置。 */
+#define APP_ENABLE_STORAGE_DEMO             1U
+#define APP_STORAGE_DEMO_TEMP              50
+#define APP_STORAGE_DEMO_SPEED             500
+#define APP_STORAGE_DEMO_TIME              60U
 
 typedef enum
 {
     APP_TASK_PRIORITY_SYSTEM_TEST = tskIDLE_PRIORITY + 1U,
     APP_TASK_PRIORITY_BUZZER_TEST = tskIDLE_PRIORITY + 1U,
-    APP_TASK_PRIORITY_M24C02_TEST = tskIDLE_PRIORITY + 1U
+    APP_TASK_PRIORITY_M24C02_TEST = tskIDLE_PRIORITY + 1U,
+    APP_TASK_PRIORITY_STORAGE = tskIDLE_PRIORITY + 1U,
+    APP_TASK_PRIORITY_STORAGE_DEMO = tskIDLE_PRIORITY + 1U
 } AppTaskPriority_t;
 
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument);
+#endif
+#if (APP_ENABLE_STORAGE_DEMO != 0U)
+static void App_StorageDemoTask(void *argument);
 #endif
 #if (APP_ENABLE_M24C02_TEST != 0U)
 static void App_M24C02TestTask(void *argument);
@@ -60,6 +75,22 @@ void App_main(void)
         }
     }
 
+    switch (App_StorageInit())
+    {
+        case APP_STORAGE_INIT_LOADED:
+            debug_printfln("User settings loaded");
+            break;
+        case APP_STORAGE_INIT_DEFAULT:
+            debug_printfln("No valid user settings, use defaults");
+            break;
+        case APP_STORAGE_INIT_ERROR:
+            debug_printfln("User settings EEPROM unavailable");
+            break;
+        default:
+            debug_printfln("User settings init failed");
+            break;
+    }
+
     if (App_BuzzerInit() == 0U)
     {
         debug_printfln("Buzzer init failed");
@@ -82,6 +113,24 @@ void App_main(void)
     if (xTaskCreate(App_M24C02TestTask, "M24C02Test", APP_M24C02_TEST_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_M24C02_TEST, NULL) != pdPASS)
     {
         debug_printfln("M24C02 test task create failed");
+        for (;;)
+        {
+        }
+    }
+#endif
+
+    if (xTaskCreate(App_StorageTask, "Storage", APP_STORAGE_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_STORAGE, NULL) != pdPASS)
+    {
+        debug_printfln("Storage task create failed");
+        for (;;)
+        {
+        }
+    }
+
+#if (APP_ENABLE_STORAGE_DEMO != 0U)
+    if (xTaskCreate(App_StorageDemoTask, "StorageDemo", APP_STORAGE_DEMO_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_STORAGE_DEMO, NULL) != pdPASS)
+    {
+        debug_printfln("Storage demo task create failed");
         for (;;)
         {
         }
@@ -276,5 +325,51 @@ static const char *App_M24C02TestResultName(AppM24C02TestResult_t result)
         default:
             return "UNKNOWN";
     }
+}
+#endif
+
+#if (APP_ENABLE_STORAGE_DEMO != 0U)
+static void App_StorageDemoTask(void *argument)
+{
+    AppData_t dataSnapshot;
+
+    (void)argument;
+
+    /* 等待存储初始化任务完成首次调度，再打印上电恢复的设置。 */
+    vTaskDelay(pdMS_TO_TICKS(APP_STORAGE_DEMO_DELAY_MS));
+    if (App_SystemLock(portMAX_DELAY) != 0U)
+    {
+        dataSnapshot = g_appData;
+        App_SystemUnlock();
+
+        Com_DebugPrintf("Storage demo restored: temp=%d, speed=%d, time=%lu s\r\n",
+                        (int)dataSnapshot.TargetTemperature,
+                        (int)dataSnapshot.TargetSpeed,
+                        (unsigned long)dataSnapshot.TargetTime);
+    }
+
+    /* 写入一组固定值，验证设置接口和延迟防抖保存功能。 */
+    if (App_StorageSetSettings(APP_STORAGE_DEMO_TEMP,
+                               APP_STORAGE_DEMO_SPEED,
+                               APP_STORAGE_DEMO_TIME) != 0U)
+    {
+        debug_printfln("Storage demo set: temp=50, speed=500, time=60 s");
+    }
+
+    /* 等待超过防抖时间，确保存储任务已经完成 EEPROM 写入。 */
+    vTaskDelay(pdMS_TO_TICKS(APP_STORAGE_DEMO_SAVE_WAIT_MS));
+    if (App_SystemLock(portMAX_DELAY) != 0U)
+    {
+        dataSnapshot = g_appData;
+        App_SystemUnlock();
+
+        Com_DebugPrintf("Storage demo current: temp=%d, speed=%d, time=%lu s\r\n",
+                        (int)dataSnapshot.TargetTemperature,
+                        (int)dataSnapshot.TargetSpeed,
+                        (unsigned long)dataSnapshot.TargetTime);
+    }
+
+    /* Demo 只执行一次，结束后删除自身。 */
+    vTaskDelete(NULL);
 }
 #endif
