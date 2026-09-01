@@ -644,6 +644,26 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_ui.h</FilePath>
             </File>
+            <File>
+              <FileName>App_motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_motor.h</FilePath>
+            </File>
+            <File>
+              <FileName>App_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_rtc.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_rtc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_rtc.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -731,6 +751,16 @@
               <FileName>Dri_key.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Dri\Dri_key.h</FilePath>
+            </File>
+            <File>
+              <FileName>Dri_ds3231.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Dri\Dri_ds3231.c</FilePath>
+            </File>
+            <File>
+              <FileName>Dri_ds3231.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Dri\Dri_ds3231.h</FilePath>
             </File>
           </Files>
         </Group>

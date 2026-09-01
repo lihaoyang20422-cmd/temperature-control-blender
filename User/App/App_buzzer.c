@@ -5,7 +5,8 @@
 #include "tim.h"
 
 #define APP_BUZZER_PWM_PERIOD 17999U
-#define APP_BUZZER_PWM_PULSE  ((APP_BUZZER_PWM_PERIOD + 1U) / 2U)
+/* 降低占空比，减小压电蜂鸣器的响度；频率仍由 TIM1 保持为 4 kHz。 */
+#define APP_BUZZER_PWM_PULSE  ((APP_BUZZER_PWM_PERIOD + 1U) / 4U)
 
 static TimerHandle_t s_shortTimer;
 static volatile uint8_t s_initialized;
@@ -144,6 +145,23 @@ void App_BuzzerSetContinuous(uint8_t enable)
 
     App_BuzzerPostCommand((enable != 0U) ? APP_BUZZER_CMD_CONTINUOUS_ON
                                          : APP_BUZZER_CMD_CONTINUOUS_OFF);
+}
+
+void App_BuzzerStartupSound(void)
+{
+    if (s_initialized == 0U)
+    {
+        return;
+    }
+
+    /* 调度器尚未启动，直接用 HAL 延时播放两次短提示音。 */
+    App_BuzzerStartPwm();
+    HAL_Delay(80U);
+    App_BuzzerStopPwm();
+    HAL_Delay(40U);
+    App_BuzzerStartPwm();
+    HAL_Delay(80U);
+    App_BuzzerStopPwm();
 }
 
 

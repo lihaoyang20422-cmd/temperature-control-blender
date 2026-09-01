@@ -262,7 +262,7 @@ uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus)
     (void)ssd1315_gram_write_string(&s_oledHandle, APP_OLED_LINE_X, 36U,
                                     line, (uint16_t)length, 1U, APP_OLED_LINE_FONT);
 
-    (void)snprintf(line, sizeof(line), "STATUS:%s", App_OledStatusName(data->CurrentStatus));
+    (void)snprintf(line, sizeof(line), " STATUS:%s", App_OledStatusName(data->CurrentStatus));
     length = (int)strlen(line);
     (void)ssd1315_gram_write_string(&s_oledHandle, APP_OLED_LINE_X, 48U,
                                     line, (uint16_t)length, 1U, APP_OLED_LINE_FONT);

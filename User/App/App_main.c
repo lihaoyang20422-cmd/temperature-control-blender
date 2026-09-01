@@ -5,8 +5,10 @@
 #include "App_m24c02.h"
 #include "App_storage.h"
 #include "App_oled.h"
+#include "App_motor.h"
 #include "App_key.h"
 #include "App_ui.h"
+#include "App_rtc.h"
 #include "Dri_key.h"
 #include "bsp_pins.h"
 #include "Int_I2C1.h"
@@ -19,6 +21,11 @@
 #define APP_SYSTEM_TEST_PERIOD_MS          1000U
 #define APP_RUN_CONTROL_TASK_STACK_SIZE    192U
 #define APP_RUN_CONTROL_PERIOD_MS          1000U
+#define APP_MOTOR_TEST_TASK_STACK_SIZE    192U
+#define APP_MOTOR_TEST_START_DELAY_MS     2000U
+#define APP_MOTOR_TEST_RUN_TIME_MS        4000U
+#define APP_MOTOR_TEST_PWM_COMPARE        1800U
+#define APP_OLED_SPLASH_HOLD_MS           2000U
 #define APP_SYSTEM_TEST_TARGET_TEMP        60
 #define APP_SYSTEM_TEST_TARGET_SPEED       600
 #define APP_SYSTEM_TEST_TARGET_TIME        10U
@@ -26,6 +33,7 @@
 #define APP_BUZZER_TEST_LONG_MS            1000U
 /* 开发阶段置为 1，验证完成后置为 0 即可关闭 EEPROM 上电自检。 */
 #define APP_ENABLE_M24C02_TEST             0U
+#define APP_ENABLE_MOTOR_TEST              1U
 #define APP_ENABLE_SYSTEM_TEST             0U
 #define APP_M24C02_TEST_TASK_STACK_SIZE    160U
 #define APP_M24C02_TEST_START_DELAY_MS     100U
@@ -37,6 +45,7 @@
 #define APP_KEY_SCAN_PERIOD_MS              10U
 /* 开发验证置为 1；测试完成后置为 0，避免启动时修改用户设置。 */
 #define APP_ENABLE_STORAGE_DEMO             0U
+#define APP_ENABLE_REST_TASKS               1U
 #define APP_STORAGE_DEMO_TEMP              50
 #define APP_STORAGE_DEMO_SPEED             500
 #define APP_STORAGE_DEMO_TIME              60U
@@ -52,11 +61,14 @@ typedef enum
     APP_TASK_PRIORITY_KEY = tskIDLE_PRIORITY + 1U
 } AppTaskPriority_t;
 
+#if (APP_ENABLE_REST_TASKS != 0U)
 static void App_KeyTask(void *argument);
 static void App_RunControlTask(void *argument);
+#endif
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument);
 #endif
+
 #if (APP_ENABLE_STORAGE_DEMO != 0U)
 static void App_StorageDemoTask(void *argument);
 #endif
@@ -64,6 +76,7 @@ static void App_StorageDemoTask(void *argument);
 static void App_M24C02TestTask(void *argument);
 static const char *App_M24C02TestResultName(AppM24C02TestResult_t result);
 #endif
+
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static const char *App_SystemFocusLine(AppFocusItem_t focus);
 static const char *App_SystemStatusName(AppMotorStatusValue_t status);
@@ -83,6 +96,9 @@ void App_main(void)
         }
     }
 
+    /* DS3231 与 M24C02 共用 I2C2，先完成总线互斥初始化再探测 RTC。 */
+    (void)App_RtcInit();
+
     /* OLED 使用 I2C1，先创建总线互斥锁，再执行 OLED 初始化。 */
     if (Bsp_I2c1Init() == 0U)
     {
@@ -95,6 +111,8 @@ void App_main(void)
     else
     {
         oledReady = 1U;
+        /* 初始化阶段先显示 Ayang，保持 2 秒后再创建正常 UI 任务。 */
+        HAL_Delay(APP_OLED_SPLASH_HOLD_MS);
     }
 
     if (Dri_KeyInit() == 0U)
@@ -106,9 +124,22 @@ void App_main(void)
         keyReady = 1U;
     }
 
+    /* 仅保留电机测试任务；保留初始化代码但明确标记结果当前不使用。 */
+    (void)oledReady;
+    (void)keyReady;
+
     if (App_SystemInit() == 0U)
     {
         debug_printfln("System state mutex create failed");
+        for (;;)
+        {
+        }
+    }
+
+    /* 初始化搅拌电机编码器和 PWM 输出，初始化阶段不启动电机。 */
+    if (App_MotorInit() == 0U)
+    {
+        debug_printfln("Motor init failed");
         for (;;)
         {
         }
@@ -137,6 +168,11 @@ void App_main(void)
         {
         }
     }
+    else
+    {
+        /* 调度器启动前播放开机提示音，避免占用软件定时器服务任务。 */
+        App_BuzzerStartupSound();
+    }
 
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
     if (xTaskCreate(App_SystemTestTask, "SystemTest", APP_SYSTEM_TEST_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_SYSTEM_TEST, NULL) != pdPASS)
@@ -158,6 +194,13 @@ void App_main(void)
     }
 #endif
 
+#if (APP_ENABLE_MOTOR_TEST != 0U)
+    /* 电机任务由电机模块创建，避免 App 层保留旧的开环测试实现。 */
+    App_MotorCreateTask();
+#endif
+
+#if 0
+    /* 测试阶段关闭存储任务，避免 EEPROM 后台写入影响电机验证。 */
     if (xTaskCreate(App_StorageTask, "Storage", APP_STORAGE_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_STORAGE, NULL) != pdPASS)
     {
         debug_printfln("Storage task create failed");
@@ -167,6 +210,9 @@ void App_main(void)
     }
 
     /* 运行控制任务每秒更新一次已运行/剩余时间，并在到点时自动回到 IDLE。 */
+#endif
+#if 0
+    /* 运行控制任务在电机独立测试期间关闭。 */
     if (xTaskCreate(App_RunControlTask, "RunControl", APP_RUN_CONTROL_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_SYSTEM_TEST, NULL) != pdPASS)
     {
         debug_printfln("Run control task create failed");
@@ -185,6 +231,51 @@ void App_main(void)
     }
 #endif
 
+#if 0
+    /* 测试阶段关闭 OLED UI 任务，避免显示刷新占用 I2C 和调度资源。 */
+    if (oledReady != 0U)
+    {
+        if (xTaskCreate(App_UiTask, "UI", 256U, NULL, APP_TASK_PRIORITY_UI, NULL) != pdPASS)
+        {
+            debug_printfln("OLED task create failed");
+        }
+    }
+
+#endif
+#if 0
+    /* 测试阶段关闭按键扫描任务，防止按键改变业务状态。 */
+    if (keyReady != 0U)
+    {
+        if (xTaskCreate(App_KeyTask, "Key", APP_KEY_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_KEY, NULL) != pdPASS)
+        {
+            debug_printfln("Key task create failed");
+        }
+    }
+
+#endif
+
+#endif
+
+#if (APP_ENABLE_REST_TASKS != 0U)
+    /* 恢复业务任务：存储、运行计时、OLED 刷新和按键处理。 */
+    if (xTaskCreate(App_StorageTask, "Storage", APP_STORAGE_TASK_STACK_SIZE, NULL,
+                    APP_TASK_PRIORITY_STORAGE, NULL) != pdPASS)
+    {
+        debug_printfln("Storage task create failed");
+        for (;;)
+        {
+        }
+    }
+
+    if (xTaskCreate(App_RunControlTask, "RunControl", APP_RUN_CONTROL_TASK_STACK_SIZE, NULL,
+                    APP_TASK_PRIORITY_SYSTEM_TEST, NULL) != pdPASS)
+    {
+        debug_printfln("Run control task create failed");
+        for (;;)
+        {
+        }
+    }
+
     if (oledReady != 0U)
     {
         if (xTaskCreate(App_UiTask, "UI", 256U, NULL, APP_TASK_PRIORITY_UI, NULL) != pdPASS)
@@ -200,6 +291,7 @@ void App_main(void)
             debug_printfln("Key task create failed");
         }
     }
+#endif
 
     vTaskStartScheduler();
 
@@ -208,6 +300,7 @@ void App_main(void)
     }
 }
 
+#if (APP_ENABLE_REST_TASKS != 0U)
 static void App_KeyTask(void *argument)
 {
     DriKeyEvent_t event;
@@ -266,6 +359,126 @@ static void App_RunControlTask(void *argument)
         vTaskDelay(pdMS_TO_TICKS(APP_RUN_CONTROL_PERIOD_MS));
     }
 }
+#endif
+
+#if 0
+#if 0
+static void App_MotorTask(void *argument)
+{
+    uint32_t elapsedMs;
+    uint8_t faulted;
+    uint8_t fanEnabled;
+
+    (void)argument;
+    elapsedMs = 0U;
+    faulted = 0U;
+    fanEnabled = 0U;
+
+    /* 上电后等待 3 秒，便于观察系统启动日志并确认电机默认不转。 */
+    vTaskDelay(pdMS_TO_TICKS(APP_MOTOR_TEST_START_DELAY_MS));
+
+    /* 测试输出期间将系统状态标记为 RUNNING，避免出现 IDLE 状态下仍有 PWM 的不一致。 */
+    if (App_SystemSetMotorStatus(APP_MOTOR_STATUS_RUNNING) != 0U)
+    {
+        if (App_SystemLock(portMAX_DELAY) != 0U)
+        {
+            /* 禁止运行控制任务干预本次独立测试，但不修改用户设定的目标时间。 */
+            g_appData.CurrentTime = 0U;
+            g_appData.RemainingTime = 0U;
+            App_SystemUnlock();
+        }
+
+        /* 测试期间同步打开风扇，验证 PA1/MOTOR_ON 风扇开关输出。 */
+        HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin, MOTOR_ON_ACTIVE_STATE);
+        fanEnabled = 1U;
+
+        /* 以约 50% 占空比启动搅拌电机，测试 TIM4/PB8 和 PB9 单向控制链路。 */
+        if (App_MotorSetPwm(APP_MOTOR_TEST_PWM_COMPARE) != 0U &&
+            App_MotorStartPwm() != 0U)
+        {
+            debug_printfln("Motor test started, PWM compare=1800, fan enabled");
+            while (elapsedMs < APP_MOTOR_TEST_RUN_TIME_MS)
+            {
+                vTaskDelay(pdMS_TO_TICKS(100U));
+                elapsedMs += 100U;
+
+                /* 测试期间一旦进入故障状态，立即跳出并执行停机。 */
+                if (App_SystemLock(0U) != 0U)
+                {
+                    faulted = (g_appData.CurrentStatus == APP_MOTOR_STATUS_FAULT) ? 1U : 0U;
+                    App_SystemUnlock();
+                }
+                if (faulted != 0U)
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            debug_printfln("Motor test start failed");
+        }
+    }
+    else
+    {
+        debug_printfln("Motor test rejected by motor status");
+    }
+
+    /* 测试结束后无论启动是否成功，都恢复安全停止状态。 */
+    App_MotorStop();
+    if (fanEnabled != 0U)
+    {
+        /* 风扇开关属于本测试任务，测试结束后必须恢复关闭。 */
+        HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin, MOTOR_ON_INACTIVE_STATE);
+    }
+    if (faulted == 0U)
+    {
+        (void)App_SystemSetMotorStatus(APP_MOTOR_STATUS_IDLE);
+    }
+    if (faulted != 0U)
+    {
+        debug_printfln("Motor test aborted by fault");
+    }
+    else
+    {
+        debug_printfln("Motor test finished, PWM stopped");
+    }
+    vTaskDelete(NULL);
+}
+#endif
+
+/* 独立的电机开环测试任务：不读取或修改 App 状态，避免其他业务任务干预。 */
+static void App_MotorTask(void *argument)
+{
+    (void)argument;
+
+    /* 上电后等待 2 秒，便于观察启动日志。 */
+    vTaskDelay(pdMS_TO_TICKS(APP_MOTOR_TEST_START_DELAY_MS));
+
+    /* MOTOR_ON 仅控制风扇；搅拌电机由 TIM4_CH3/PB8 和 PB9 控制。 */
+    HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin, MOTOR_ON_ACTIVE_STATE);
+
+    /* 1800 / 3600 约为 50% 占空比，PB9 固定低电平实现单向驱动。 */
+    if ((App_MotorSetPwm(APP_MOTOR_TEST_PWM_COMPARE) != 0U) &&
+        (App_MotorStartPwm() != 0U))
+    {
+        debug_printfln("Motor test started, PWM compare=1800, fan enabled");
+
+        /* 测试期间只等待固定时长，不受按键、倒计时或状态机影响。 */
+        vTaskDelay(pdMS_TO_TICKS(APP_MOTOR_TEST_RUN_TIME_MS));
+    }
+    else
+    {
+        debug_printfln("Motor test start failed");
+    }
+
+    /* 测试结束后关闭电机和风扇，并删除自身任务。 */
+    App_MotorStop();
+    HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin, MOTOR_ON_INACTIVE_STATE);
+    debug_printfln("Motor test finished, PWM stopped");
+    vTaskDelete(NULL);
+}
+#endif
 
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument)

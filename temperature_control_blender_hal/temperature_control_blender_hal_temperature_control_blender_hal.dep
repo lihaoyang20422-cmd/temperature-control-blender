@@ -1059,8 +1059,8 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h)(0x69F49209)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x69F49209)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x69F49209)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69F49209)
-F (.\User\App\App_buzzer.c)(0x6A951BCC)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_buzzer.o --omf_browse temperature_control_blender_hal\app_buzzer.crf --depend temperature_control_blender_hal\app_buzzer.d)
-I (User\App\App_buzzer.h)(0x6A951ACB)
+F (.\User\App\App_buzzer.c)(0x6A968201)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_buzzer.o --omf_browse temperature_control_blender_hal\app_buzzer.crf --depend temperature_control_blender_hal\app_buzzer.d)
+I (User\App\App_buzzer.h)(0x6A9681FF)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
 I (./User/Mid/FreeRTOS/inc/FreeRTOS.h)(0x6A23FD31)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stddef.h)(0x65B12E28)
@@ -1105,12 +1105,12 @@ I (./User/Mid/FreeRTOS/inc/task.h)(0x6A23FD31)
 I (./User/Mid/FreeRTOS/inc/list.h)(0x6A23FD31)
 I (../Core/Inc/tim.h)(0x6A94F06A)
 I (../Core/Inc/main.h)(0x6A951822)
-F (.\User\App\App_buzzer.h)(0x6A951ACB)()
-F (.\User\App\App_main.c)(0x6A962A7B)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_main.o --omf_browse temperature_control_blender_hal\app_main.crf --depend temperature_control_blender_hal\app_main.d)
+F (.\User\App\App_buzzer.h)(0x6A9681FF)()
+F (.\User\App\App_main.c)(0x6A968977)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_main.o --omf_browse temperature_control_blender_hal\app_main.crf --depend temperature_control_blender_hal\app_main.d)
 I (User\App\App_main.h)(0x6A9524DD)
 I (./User/Com/Com_debug.h)(0x6A94F97A)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
-I (User\App\App_buzzer.h)(0x6A951ACB)
+I (User\App\App_buzzer.h)(0x6A9681FF)
 I (User\App\App_system.h)(0x6A962A4B)
 I (./User/Mid/FreeRTOS/inc/FreeRTOS.h)(0x6A23FD31)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stddef.h)(0x65B12E28)
@@ -1153,11 +1153,13 @@ I (./User/Mid/FreeRTOS/inc/mpu_wrappers.h)(0x6A23FD31)
 I (User\App\App_m24c02.h)(0x6A953910)
 I (User\App\App_storage.h)(0x6A954826)
 I (User\App\App_oled.h)(0x6A95692B)
+I (User\App\App_motor.h)(0x6A9680B6)
 I (User\App\App_key.h)(0x6A96222F)
 I (./User/Dri/Dri_key.h)(0x6A9621EC)
 I (User\App\App_ui.h)(0x6A962320)
 I (./User/Mid/FreeRTOS/inc/task.h)(0x6A23FD31)
 I (./User/Mid/FreeRTOS/inc/list.h)(0x6A23FD31)
+I (User\App\App_rtc.h)(0x6A968972)
 I (./User/Int/bsp_pins.h)(0x6A94EAAE)
 I (../Core/Inc/main.h)(0x6A951822)
 I (./User/Int/Int_I2C1.h)(0x6A955B1C)
@@ -1261,7 +1263,7 @@ I (./User/Dri/drv_m24c02.h)(0x6A91044E)
 I (./User/Mid/FreeRTOS/inc/task.h)(0x6A23FD31)
 I (./User/Mid/FreeRTOS/inc/list.h)(0x6A23FD31)
 F (.\User\App\App_storage.h)(0x6A954826)()
-F (.\User\App\App_oled.c)(0x6A962A66)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_oled.o --omf_browse temperature_control_blender_hal\app_oled.crf --depend temperature_control_blender_hal\app_oled.d)
+F (.\User\App\App_oled.c)(0x6A9686E5)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_oled.o --omf_browse temperature_control_blender_hal\app_oled.crf --depend temperature_control_blender_hal\app_oled.d)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stdarg.h)(0x65B12E2C)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stdio.h)(0x65B12E24)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\string.h)(0x65B12E1C)
@@ -1314,10 +1316,11 @@ I (./User/Dri/driver_ssd1315.h)(0x6A91044E)
 I (./User/Mid/FreeRTOS/inc/task.h)(0x6A23FD31)
 I (./User/Mid/FreeRTOS/inc/list.h)(0x6A23FD31)
 F (.\User\App\App_oled.h)(0x6A95692B)()
-F (.\User\App\App_key.c)(0x6A962B20)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_key.o --omf_browse temperature_control_blender_hal\app_key.crf --depend temperature_control_blender_hal\app_key.d)
+F (.\User\App\App_key.c)(0x6A968C71)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_key.o --omf_browse temperature_control_blender_hal\app_key.crf --depend temperature_control_blender_hal\app_key.d)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
 I (User\App\App_key.h)(0x6A96222F)
 I (./User/Dri/Dri_key.h)(0x6A9621EC)
+I (User\App\App_buzzer.h)(0x6A9681FF)
 I (User\App\App_system.h)(0x6A962A4B)
 I (./User/Mid/FreeRTOS/inc/FreeRTOS.h)(0x6A23FD31)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stddef.h)(0x65B12E28)
@@ -1409,6 +1412,62 @@ I (./User/Mid/FreeRTOS/inc/list.h)(0x6A23FD31)
 I (User\App\App_system.h)(0x6A962A4B)
 I (User\App\App_oled.h)(0x6A95692B)
 F (.\User\App\App_ui.h)(0x6A962320)()
+F (.\User\App\App_motor.c)(0x6A96831D)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_motor.o --omf_browse temperature_control_blender_hal\app_motor.crf --depend temperature_control_blender_hal\app_motor.d)
+I (User\App\App_motor.h)(0x6A9680B6)
+I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
+I (User\App\App_system.h)(0x6A962A4B)
+I (./User/Mid/FreeRTOS/inc/FreeRTOS.h)(0x6A23FD31)
+I (D:\software1\Keil_v5\ARM\ARMCC\include\stddef.h)(0x65B12E28)
+I (./User/Mid/FreeRTOS/FreeRTOSConfig.h)(0x6A9172A3)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h)(0x69F49209)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h)(0x69F49209)
+I (../Drivers/CMSIS/Include/core_cm3.h)(0x69F49201)
+I (../Drivers/CMSIS/Include/cmsis_version.h)(0x69F49201)
+I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x69F49201)
+I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x69F49201)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x69F49209)
+I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A94F567)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_exti.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_can.h)(0x6A91044E)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69F49209)
+I (./User/Mid/FreeRTOS/inc/projdefs.h)(0x6A23FD31)
+I (./User/Mid/FreeRTOS/inc/portable.h)(0x6A23FD31)
+I (./User/Mid/FreeRTOS/inc/deprecated_definitions.h)(0x6A23FD31)
+I (./User/Mid/FreeRTOS/port/portmacro.h)(0x66962B64)
+I (./User/Mid/FreeRTOS/inc/mpu_wrappers.h)(0x6A23FD31)
+I (User\App\App_ui.h)(0x6A962320)
+I (./User/Mid/FreeRTOS/inc/task.h)(0x6A23FD31)
+I (./User/Mid/FreeRTOS/inc/list.h)(0x6A23FD31)
+I (./User/Com/Com_debug.h)(0x6A94F97A)
+I (./User/Int/bsp_pins.h)(0x6A94EAAE)
+I (../Core/Inc/main.h)(0x6A951822)
+I (../Core/Inc/tim.h)(0x6A94F06A)
+F (.\User\App\App_motor.h)(0x6A9680B6)()
+F (.\User\App\App_rtc.c)(0x6A968975)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\app_rtc.o --omf_browse temperature_control_blender_hal\app_rtc.crf --depend temperature_control_blender_hal\app_rtc.d)
+I (User\App\App_rtc.h)(0x6A968972)
+I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
+I (./User/Dri/Dri_ds3231.h)(0x6A96896D)
+I (./User/Com/Com_debug.h)(0x6A94F97A)
+F (.\User\App\App_rtc.h)(0x6A968972)()
 F (.\User\Com\Com_debug.c)(0x6A94F97D)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\com_debug.o --omf_browse temperature_control_blender_hal\com_debug.crf --depend temperature_control_blender_hal\com_debug.d)
 I (User\Com\Com_debug.h)(0x6A94F97A)
 I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
@@ -1637,6 +1696,44 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x69F49209)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x69F49209)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69F49209)
 F (.\User\Dri\Dri_key.h)(0x6A9621EC)()
+F (.\User\Dri\Dri_ds3231.c)(0x6A968970)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ./User/App -I ./User/Com -I ./User/Dri -I ./User/Int -I ./User/Mid -I ./User/Mid/FreeRTOS -I ./User/Mid/FreeRTOS/src -I ./User/Mid/FreeRTOS/port -I ./User/Mid/FreeRTOS/inc-I.\RTE\_temperature_control_blender_hal-ID:\software1\Keil_v5\ARM\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-ID:\software1\Keil_v5\ARM\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_HD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xE-o temperature_control_blender_hal\dri_ds3231.o --omf_browse temperature_control_blender_hal\dri_ds3231.crf --depend temperature_control_blender_hal\dri_ds3231.d)
+I (User\Dri\Dri_ds3231.h)(0x6A96896D)
+I (D:\software1\Keil_v5\ARM\ARMCC\include\stdint.h)(0x65B12E26)
+I (./User/Int/Int_I2C2.h)(0x6A953486)
+I (../Core/Inc/i2c.h)(0x6A94F069)
+I (../Core/Inc/main.h)(0x6A951822)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x69F49209)
+I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A94F567)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h)(0x69F49209)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h)(0x69F49209)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h)(0x69F49209)
+I (../Drivers/CMSIS/Include/core_cm3.h)(0x69F49201)
+I (../Drivers/CMSIS/Include/cmsis_version.h)(0x69F49201)
+I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x69F49201)
+I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x69F49201)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x69F49209)
+I (D:\software1\Keil_v5\ARM\ARMCC\include\stddef.h)(0x65B12E28)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_exti.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_can.h)(0x6A91044E)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x69F49209)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69F49209)
+F (.\User\Dri\Dri_ds3231.h)(0x6A96896D)()
 F (.\User\Mid\FreeRTOS\FreeRTOSConfig.h)(0x6A9172A3)()
 F (.\User\Mid\FreeRTOS\inc\atomic.h)(0x6A23FD31)()
 F (.\User\Mid\FreeRTOS\inc\croutine.h)(0x6A23FD31)()

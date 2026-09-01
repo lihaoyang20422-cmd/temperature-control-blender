@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "App_key.h"
+#include "App_buzzer.h"
 #include "App_system.h"
 #include "App_storage.h"
 #include "App_ui.h"
@@ -36,6 +37,15 @@ void App_KeyHandleEvent(const DriKeyEvent_t *event)
     }
 
     App_KeyLogEvent(event);
+
+    /* 短按或长按确认时播放提示音，重复调节事件不重复鸣叫。故障连续
+       报警期间由蜂鸣器模块自动屏蔽该短鸣。 */
+    if ((event->type == DRI_KEY_EVENT_SHORT) ||
+        (event->type == DRI_KEY_EVENT_LONG))
+    {
+        /* 暂时关闭按键确认短鸣，保留蜂鸣器开机音效和持续报警接口。 */
+        /* App_BuzzerBeepShort(); */
+    }
 
     switch (event->key)
     {
@@ -193,16 +203,20 @@ static void App_KeyToggleRunIdle(void)
             g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
             g_motorStatus.Current = APP_MOTOR_STATUS_IDLE;
             /* 手动停止后清零本次运行计时，下次启动重新从 0 秒开始。 */
-            g_appData.CurrentTime = 0U;
-            g_appData.RemainingTime = 0U;
+            /* 短按停止只暂停本次运行，保留已运行时间和剩余时间，便于再次继续。 */
         }
         else if (g_appData.TargetTime != 0U)
         {
             g_appData.CurrentStatus = APP_MOTOR_STATUS_RUNNING;
             g_motorStatus.Current = APP_MOTOR_STATUS_RUNNING;
             /* 每次启动都从 0 秒开始累计，同时装载倒计时初值。 */
-            g_appData.CurrentTime = 0U;
-            g_appData.RemainingTime = g_appData.TargetTime;
+            /* 首次启动或上一轮已完成时从 0 开始；暂停恢复时保留原进度。 */
+            if ((g_appData.RemainingTime == 0U) ||
+                (g_appData.CurrentTime >= g_appData.TargetTime))
+            {
+                g_appData.CurrentTime = 0U;
+                g_appData.RemainingTime = g_appData.TargetTime;
+            }
         }
     }
 
@@ -219,9 +233,6 @@ static void App_KeyClearTargets(void)
     /* 长按 KEY4 在非故障状态下清零目标参数并回到 IDLE。 */
     if (g_appData.CurrentStatus != APP_MOTOR_STATUS_FAULT)
     {
-        g_appData.TargetTemperature = 0;
-        g_appData.TargetSpeed = 0;
-        g_appData.TargetTime = 0U;
         g_appData.CurrentTime = 0U;
         g_appData.RemainingTime = 0U;
         g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;

@@ -2,6 +2,7 @@ temperature_control_blender_hal\app_key.o: User\App\App_key.c
 temperature_control_blender_hal\app_key.o: D:\software1\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 temperature_control_blender_hal\app_key.o: User\App\App_key.h
 temperature_control_blender_hal\app_key.o: ./User/Dri/Dri_key.h
+temperature_control_blender_hal\app_key.o: User\App\App_buzzer.h
 temperature_control_blender_hal\app_key.o: User\App\App_system.h
 temperature_control_blender_hal\app_key.o: ./User/Mid/FreeRTOS/inc/FreeRTOS.h
 temperature_control_blender_hal\app_key.o: D:\software1\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
