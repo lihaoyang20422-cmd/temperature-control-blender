@@ -241,9 +241,11 @@ uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus)
     (void)ssd1315_gram_write_string(&s_oledHandle, APP_OLED_LINE_X, 0U,
                                     line, (uint16_t)length, 1U, APP_OLED_LINE_FONT);
 
-    (void)snprintf(line, sizeof(line), "%cTEMP:%d/%dC",
+    /* 温度行同时显示液温当前值/目标值和板温，采用紧凑格式避免超出屏宽。 */
+    (void)snprintf(line, sizeof(line), "%cT:%d/%d B:%d",
                    App_OledFocusMark(focus, APP_FOCUS_TEMPERATURE),
-                   (int)data->CurrentTemperature, (int)data->TargetTemperature);
+                   (int)data->CurrentTemperature, (int)data->TargetTemperature,
+                   (int)data->CurrentBoardTemperature);
     length = (int)strlen(line);
     (void)ssd1315_gram_write_string(&s_oledHandle, APP_OLED_LINE_X, 12U,
                                     line, (uint16_t)length, 1U, APP_OLED_LINE_FONT);

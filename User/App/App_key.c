@@ -190,6 +190,8 @@ static void App_KeyAdjustTarget(int16_t delta)
 
 static void App_KeyToggleRunIdle(void)
 {
+    AppMotorStatusValue_t nextStatus = APP_MOTOR_STATUS_FAULT;
+
     if (App_SystemLock(portMAX_DELAY) == 0U)
     {
         return;
@@ -200,15 +202,13 @@ static void App_KeyToggleRunIdle(void)
     {
         if (g_appData.CurrentStatus == APP_MOTOR_STATUS_RUNNING)
         {
-            g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
-            g_motorStatus.Current = APP_MOTOR_STATUS_IDLE;
+            nextStatus = APP_MOTOR_STATUS_IDLE;
             /* 手动停止后清零本次运行计时，下次启动重新从 0 秒开始。 */
             /* 短按停止只暂停本次运行，保留已运行时间和剩余时间，便于再次继续。 */
         }
         else if (g_appData.TargetTime != 0U)
         {
-            g_appData.CurrentStatus = APP_MOTOR_STATUS_RUNNING;
-            g_motorStatus.Current = APP_MOTOR_STATUS_RUNNING;
+            nextStatus = APP_MOTOR_STATUS_RUNNING;
             /* 每次启动都从 0 秒开始累计，同时装载倒计时初值。 */
             /* 首次启动或上一轮已完成时从 0 开始；暂停恢复时保留原进度。 */
             if ((g_appData.RemainingTime == 0U) ||
@@ -221,10 +221,18 @@ static void App_KeyToggleRunIdle(void)
     }
 
     App_SystemUnlock();
+
+    /* 统一状态入口会复核故障位，并在切换到 IDLE 时立即关闭全部危险输出。 */
+    if (nextStatus != APP_MOTOR_STATUS_FAULT)
+    {
+        (void)App_SystemSetMotorStatus(nextStatus);
+    }
 }
 
 static void App_KeyClearTargets(void)
 {
+    uint8_t changeToIdle = 0U;
+
     if (App_SystemLock(portMAX_DELAY) == 0U)
     {
         return;
@@ -235,11 +243,14 @@ static void App_KeyClearTargets(void)
     {
         g_appData.CurrentTime = 0U;
         g_appData.RemainingTime = 0U;
-        g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
-        g_motorStatus.Current = APP_MOTOR_STATUS_IDLE;
+        changeToIdle = 1U;
     }
 
     App_SystemUnlock();
+    if (changeToIdle != 0U)
+    {
+        (void)App_SystemSetMotorStatus(APP_MOTOR_STATUS_IDLE);
+    }
     /* 长按清零同样需要持久化，避免复位后恢复旧设置。 */
     App_StorageRequestSave();
 }

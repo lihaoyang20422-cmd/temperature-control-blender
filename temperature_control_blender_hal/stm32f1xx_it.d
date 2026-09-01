@@ -34,3 +34,4 @@ temperature_control_blender_hal\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/
 temperature_control_blender_hal\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 temperature_control_blender_hal\stm32f1xx_it.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 temperature_control_blender_hal\stm32f1xx_it.o: ../Core/Inc/stm32f1xx_it.h
+temperature_control_blender_hal\stm32f1xx_it.o: ./User/App/App_heater.h

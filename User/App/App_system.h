@@ -14,6 +14,18 @@ typedef enum
     APP_MOTOR_STATUS_FAULT
 } AppMotorStatusValue_t;
 
+/* 各模块独立占用故障位，只允许故障所有者在后续恢复流程中清除。 */
+typedef enum
+{
+    APP_FAULT_NONE               = 0U,
+    APP_FAULT_STARTUP            = (1U << 0),
+    APP_FAULT_IMU_TILT           = (1U << 1),
+    APP_FAULT_HEATER_SENSOR      = (1U << 2),
+    APP_FAULT_HEATER_OVERTEMP    = (1U << 3),
+    APP_FAULT_HEATER_ELECTRICAL  = (1U << 4),
+    APP_FAULT_ADC_RUNTIME        = (1U << 5)
+} AppFault_t;
+
 /* 记录当前电机运行状态。 */
 typedef struct
 {
@@ -39,6 +51,7 @@ typedef struct
 typedef struct
 {
     int16_t CurrentTemperature;              /* 当前液体温度。 */
+    int16_t CurrentBoardTemperature;         /* 当前板温。 */
     int16_t TargetTemperature;               /* 用户设置的目标温度。 */
     int16_t CurrentSpeed;                    /* 当前电机转速，单位为 RPM。 */
     int16_t TargetSpeed;                     /* 用户设置的目标转速，单位为 RPM。 */
@@ -47,6 +60,7 @@ typedef struct
     AppMotorStatusValue_t CurrentStatus;     /* 当前空闲、运行或故障状态。 */
     uint32_t Uid[APP_UID_WORD_COUNT];        /* STM32 完整的 96 位芯片唯一 ID。 */
     uint32_t CurrentTime;                    /* 当前已运行时间，单位为秒，从 0 逐秒增加。 */
+    uint32_t FaultFlags;                     /* 当前锁存的故障位。 */
 } AppData_t;
 
 /* 三个全局结构体共用同一把互斥锁，访问时必须先调用 App_SystemLock。 */
@@ -67,6 +81,9 @@ void App_SystemUnlock(void);
  * 当状态首次进入故障时，会自动调用 App_SystemMotorFaultHook。
  */
 uint8_t App_SystemSetMotorStatus(AppMotorStatusValue_t status);
+
+/* 任务上下文故障入口：先关闭全部危险输出，再锁存故障位并进入 FAULT。 */
+uint8_t App_SystemSetFault(AppFault_t fault);
 
 /*
  * 周期检查两个共享状态字段；即使其他代码直接写入故障状态，也能触发安全钩子。

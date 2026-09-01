@@ -15,6 +15,7 @@ static uint8_t App_UiDisplayChanged(const AppData_t *currentData,
     uint8_t index;
 
     if ((currentData->CurrentTemperature != displayedData->CurrentTemperature) ||
+        (currentData->CurrentBoardTemperature != displayedData->CurrentBoardTemperature) ||
         (currentData->TargetTemperature != displayedData->TargetTemperature) ||
         (currentData->CurrentSpeed != displayedData->CurrentSpeed) ||
         (currentData->TargetSpeed != displayedData->TargetSpeed) ||

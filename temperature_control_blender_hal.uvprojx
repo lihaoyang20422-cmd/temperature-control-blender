@@ -655,6 +655,16 @@
               <FilePath>.\User\App\App_motor.h</FilePath>
             </File>
             <File>
+              <FileName>App_heater.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_heater.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_heater.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_heater.h</FilePath>
+            </File>
+            <File>
               <FileName>App_rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\User\App\App_rtc.c</FilePath>
@@ -751,6 +761,16 @@
               <FileName>Dri_key.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Dri\Dri_key.h</FilePath>
+            </File>
+            <File>
+              <FileName>Dri_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Dri\Dri_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>Dri_adc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Dri\Dri_adc.h</FilePath>
             </File>
             <File>
               <FileName>Dri_ds3231.c</FileName>

@@ -6,9 +6,11 @@
 #include "App_storage.h"
 #include "App_oled.h"
 #include "App_motor.h"
+#include "App_heater.h"
 #include "App_key.h"
 #include "App_ui.h"
 #include "App_rtc.h"
+#include "Dri_adc.h"
 #include "Dri_key.h"
 #include "bsp_pins.h"
 #include "Int_I2C1.h"
@@ -33,7 +35,7 @@
 #define APP_BUZZER_TEST_LONG_MS            1000U
 /* 开发阶段置为 1，验证完成后置为 0 即可关闭 EEPROM 上电自检。 */
 #define APP_ENABLE_M24C02_TEST             0U
-#define APP_ENABLE_MOTOR_TEST              1U
+#define APP_ENABLE_MOTOR_TEST              0U
 #define APP_ENABLE_SYSTEM_TEST             0U
 #define APP_M24C02_TEST_TASK_STACK_SIZE    160U
 #define APP_M24C02_TEST_START_DELAY_MS     100U
@@ -46,6 +48,9 @@
 /* 开发验证置为 1；测试完成后置为 0，避免启动时修改用户设置。 */
 #define APP_ENABLE_STORAGE_DEMO             0U
 #define APP_ENABLE_REST_TASKS               1U
+#define APP_ENABLE_ADC_TEST                 1U
+#define APP_ADC_TEST_TASK_STACK_SIZE        192U
+#define APP_ADC_TEST_PERIOD_MS              1000U
 #define APP_STORAGE_DEMO_TEMP              50
 #define APP_STORAGE_DEMO_SPEED             500
 #define APP_STORAGE_DEMO_TIME              60U
@@ -64,6 +69,9 @@ typedef enum
 #if (APP_ENABLE_REST_TASKS != 0U)
 static void App_KeyTask(void *argument);
 static void App_RunControlTask(void *argument);
+#endif
+#if (APP_ENABLE_ADC_TEST != 0U)
+static void App_AdcTestTask(void *argument);
 #endif
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument);
@@ -172,6 +180,24 @@ void App_main(void)
     {
         /* 调度器启动前播放开机提示音，避免占用软件定时器服务任务。 */
         App_BuzzerStartupSound();
+    }
+
+    /* 建立加热安全默认状态，并用低脉冲复位外部硬件故障锁存器。 */
+    if (App_HeaterInit() == 0U)
+    {
+        debug_printfln("Heater init failed");
+        for (;;)
+        {
+        }
+    }
+
+    /* 加热任务负责温度采样、PID 输出以及 PC3 硬件故障的任务级处理。 */
+    if (App_HeaterCreateTask() == 0U)
+    {
+        debug_printfln("Heater task create failed");
+        for (;;)
+        {
+        }
     }
 
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
@@ -293,6 +319,14 @@ void App_main(void)
     }
 #endif
 
+#if (APP_ENABLE_ADC_TEST != 0U)
+    if (xTaskCreate(App_AdcTestTask, "AdcTest", APP_ADC_TEST_TASK_STACK_SIZE, NULL,
+                    APP_TASK_PRIORITY_SYSTEM_TEST, NULL) != pdPASS)
+    {
+        debug_printfln("ADC test task create failed");
+    }
+#endif
+
     vTaskStartScheduler();
 
     for (;;)
@@ -343,8 +377,6 @@ static void App_RunControlTask(void *argument)
                 if (g_appData.RemainingTime == 0U)
                 {
                     g_appData.CurrentTime = g_appData.TargetTime;
-                    g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
-                    g_motorStatus.Current = APP_MOTOR_STATUS_IDLE;
                     finished = 1U;
                 }
             }
@@ -353,10 +385,37 @@ static void App_RunControlTask(void *argument)
 
         if (finished != 0U)
         {
+            /* 统一入口立即关闭加热、电机、风扇和方向控制输出。 */
+            (void)App_SystemSetMotorStatus(APP_MOTOR_STATUS_IDLE);
             debug_printfln("Run complete, return to IDLE");
         }
         App_UiNotify();
         vTaskDelay(pdMS_TO_TICKS(APP_RUN_CONTROL_PERIOD_MS));
+    }
+}
+#endif
+
+#if (APP_ENABLE_ADC_TEST != 0U)
+static void App_AdcTestTask(void *argument)
+{
+    DriAdcSample_t sample;
+
+    (void)argument;
+    for (;;)
+    {
+        if (Dri_AdcReadAll(&sample) != 0U)
+        {
+            Com_DebugPrintf("ADC IN4(PA4)=%u IN8(PB0)=%u IN9(PB1)=%u IN10(PC0)=%u\r\n",
+                            (unsigned int)sample.heatCurrent,
+                            (unsigned int)sample.boardNtc,
+                            (unsigned int)sample.liquidNtc,
+                            (unsigned int)sample.supply24V);
+        }
+        else
+        {
+            debug_printfln("ADC read failed");
+        }
+        vTaskDelay(pdMS_TO_TICKS(APP_ADC_TEST_PERIOD_MS));
     }
 }
 #endif

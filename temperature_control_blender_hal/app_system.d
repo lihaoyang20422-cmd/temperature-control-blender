@@ -44,3 +44,6 @@ temperature_control_blender_hal\app_system.o: ./User/Mid/FreeRTOS/inc/semphr.h
 temperature_control_blender_hal\app_system.o: ./User/Mid/FreeRTOS/inc/queue.h
 temperature_control_blender_hal\app_system.o: ./User/Mid/FreeRTOS/inc/task.h
 temperature_control_blender_hal\app_system.o: ./User/Mid/FreeRTOS/inc/list.h
+temperature_control_blender_hal\app_system.o: ../Core/Inc/tim.h
+temperature_control_blender_hal\app_system.o: ../Core/Inc/main.h
+temperature_control_blender_hal\app_system.o: ./User/Int/bsp_pins.h
