@@ -37,6 +37,7 @@ uint8_t App_SystemInit(void)
     g_appData.RemainingTime = 0U;
     g_appData.TargetTime = 0U;
     g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
+    g_appData.CurrentTime = 0U;
 
     /* 保存完整的 96 位 UID，避免压缩为 32 位后降低唯一性。 */
     g_appData.Uid[0] = HAL_GetUIDw0();

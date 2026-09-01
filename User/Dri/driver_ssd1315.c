@@ -337,6 +337,7 @@ uint8_t ssd1315_clear(ssd1315_handle_t *handle)
 {
     uint8_t i;
     uint8_t n;
+    uint8_t page[128];
     
     if (handle == NULL)                                                                               /* check handle */
     {
@@ -370,12 +371,13 @@ uint8_t ssd1315_clear(ssd1315_handle_t *handle)
         for (n = 0; n < 128; n++)                                                                     /* write 128 */
         {
             handle->gram[n][i] = 0x00;                                                                /* set black */
-            if (a_ssd1315_write_byte(handle, handle->gram[n][i], SSD1315_DATA) != 0)                  /* write data */
-            {
-                handle->debug_print("ssd1315: write byte failed.\n");                                 /* write byte failed */
-                
-                return 1;                                                                             /* return error */
-            }
+            page[n] = 0x00;
+        }
+        /* 整页批量发送，避免逐字节 I2C 事务产生明显刷屏痕迹。 */
+        if (a_ssd1315_multiple_write_byte(handle, page, 128, SSD1315_DATA) != 0)
+        {
+            handle->debug_print("ssd1315: write page failed.\n");
+            return 1;
         }
     }
     
@@ -396,6 +398,7 @@ uint8_t ssd1315_gram_update(ssd1315_handle_t *handle)
 {
     uint8_t i;
     uint8_t n;
+    uint8_t page[128];
     
     if (handle == NULL)                                                                               /* check handle */
     {
@@ -428,12 +431,13 @@ uint8_t ssd1315_gram_update(ssd1315_handle_t *handle)
         }
         for (n = 0; n < 128; n++)                                                                     /* write 128 */
         {
-            if (a_ssd1315_write_byte(handle, handle->gram[n][i], SSD1315_DATA) != 0)                  /* write data */
-            {
-                handle->debug_print("ssd1315: write byte failed.\n");                                 /* write byte failed */
-                
-                return 1;                                                                             /* return error */
-            }
+            page[n] = handle->gram[n][i];
+        }
+        /* 整页批量发送，减少 I2C 起始/停止条件数量。 */
+        if (a_ssd1315_multiple_write_byte(handle, page, 128, SSD1315_DATA) != 0)
+        {
+            handle->debug_print("ssd1315: write page failed.\n");
+            return 1;
         }
     }
     

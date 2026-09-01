@@ -46,6 +46,7 @@ typedef struct
     uint32_t TargetTime;                     /* 用户设置的目标时间，单位为秒。 */
     AppMotorStatusValue_t CurrentStatus;     /* 当前空闲、运行或故障状态。 */
     uint32_t Uid[APP_UID_WORD_COUNT];        /* STM32 完整的 96 位芯片唯一 ID。 */
+    uint32_t CurrentTime;                    /* 当前已运行时间，单位为秒，从 0 逐秒增加。 */
 } AppData_t;
 
 /* 三个全局结构体共用同一把互斥锁，访问时必须先调用 App_SystemLock。 */

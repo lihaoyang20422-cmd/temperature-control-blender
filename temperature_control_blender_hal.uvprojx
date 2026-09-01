@@ -624,6 +624,26 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_oled.h</FilePath>
             </File>
+            <File>
+              <FileName>App_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_key.h</FilePath>
+            </File>
+            <File>
+              <FileName>App_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_ui.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -701,6 +721,16 @@
               <FileName>driver_ssd1315_font.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Dri\driver_ssd1315_font.h</FilePath>
+            </File>
+            <File>
+              <FileName>Dri_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Dri\Dri_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>Dri_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Dri\Dri_key.h</FilePath>
             </File>
           </Files>
         </Group>

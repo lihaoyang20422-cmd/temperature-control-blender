@@ -5,6 +5,9 @@
 #include "App_m24c02.h"
 #include "App_storage.h"
 #include "App_oled.h"
+#include "App_key.h"
+#include "App_ui.h"
+#include "Dri_key.h"
 #include "bsp_pins.h"
 #include "Int_I2C1.h"
 #include "Int_I2C2.h"
@@ -14,6 +17,8 @@
 #define APP_SYSTEM_TEST_TASK_STACK_SIZE    256U
 #define APP_BUZZER_TEST_TASK_STACK_SIZE    128U
 #define APP_SYSTEM_TEST_PERIOD_MS          1000U
+#define APP_RUN_CONTROL_TASK_STACK_SIZE    192U
+#define APP_RUN_CONTROL_PERIOD_MS          1000U
 #define APP_SYSTEM_TEST_TARGET_TEMP        60
 #define APP_SYSTEM_TEST_TARGET_SPEED       600
 #define APP_SYSTEM_TEST_TARGET_TIME        10U
@@ -28,10 +33,10 @@
 #define APP_STORAGE_DEMO_TASK_STACK_SIZE    192U
 #define APP_STORAGE_DEMO_DELAY_MS           1000U
 #define APP_STORAGE_DEMO_SAVE_WAIT_MS       6000U
-#define APP_OLED_TASK_STACK_SIZE            256U
-#define APP_OLED_UPDATE_PERIOD_MS           500U
+#define APP_KEY_TASK_STACK_SIZE             256U
+#define APP_KEY_SCAN_PERIOD_MS              10U
 /* 开发验证置为 1；测试完成后置为 0，避免启动时修改用户设置。 */
-#define APP_ENABLE_STORAGE_DEMO             1U
+#define APP_ENABLE_STORAGE_DEMO             0U
 #define APP_STORAGE_DEMO_TEMP              50
 #define APP_STORAGE_DEMO_SPEED             500
 #define APP_STORAGE_DEMO_TIME              60U
@@ -43,10 +48,12 @@ typedef enum
     APP_TASK_PRIORITY_M24C02_TEST = tskIDLE_PRIORITY + 1U,
     APP_TASK_PRIORITY_STORAGE = tskIDLE_PRIORITY + 1U,
     APP_TASK_PRIORITY_STORAGE_DEMO = tskIDLE_PRIORITY + 1U,
-    APP_TASK_PRIORITY_OLED = tskIDLE_PRIORITY + 1U
+    APP_TASK_PRIORITY_UI = tskIDLE_PRIORITY + 1U,
+    APP_TASK_PRIORITY_KEY = tskIDLE_PRIORITY + 1U
 } AppTaskPriority_t;
 
-static void App_OledTask(void *argument);
+static void App_KeyTask(void *argument);
+static void App_RunControlTask(void *argument);
 #if (APP_ENABLE_SYSTEM_TEST != 0U)
 static void App_SystemTestTask(void *argument);
 #endif
@@ -65,6 +72,7 @@ static const char *App_SystemStatusName(AppMotorStatusValue_t status);
 void App_main(void)
 {
     uint8_t oledReady = 0U;
+    uint8_t keyReady = 0U;
 
     /* 在任何 EEPROM 或其他 I2C2 任务启动前创建总线互斥锁。 */
     if (Bsp_I2c2Init() == 0U)
@@ -87,6 +95,15 @@ void App_main(void)
     else
     {
         oledReady = 1U;
+    }
+
+    if (Dri_KeyInit() == 0U)
+    {
+        debug_printfln("Key init failed");
+    }
+    else
+    {
+        keyReady = 1U;
     }
 
     if (App_SystemInit() == 0U)
@@ -149,6 +166,15 @@ void App_main(void)
         }
     }
 
+    /* 运行控制任务每秒更新一次已运行/剩余时间，并在到点时自动回到 IDLE。 */
+    if (xTaskCreate(App_RunControlTask, "RunControl", APP_RUN_CONTROL_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_SYSTEM_TEST, NULL) != pdPASS)
+    {
+        debug_printfln("Run control task create failed");
+        for (;;)
+        {
+        }
+    }
+
 #if (APP_ENABLE_STORAGE_DEMO != 0U)
     if (xTaskCreate(App_StorageDemoTask, "StorageDemo", APP_STORAGE_DEMO_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_STORAGE_DEMO, NULL) != pdPASS)
     {
@@ -161,9 +187,17 @@ void App_main(void)
 
     if (oledReady != 0U)
     {
-        if (xTaskCreate(App_OledTask, "OLED", APP_OLED_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_OLED, NULL) != pdPASS)
+        if (xTaskCreate(App_UiTask, "UI", 256U, NULL, APP_TASK_PRIORITY_UI, NULL) != pdPASS)
         {
             debug_printfln("OLED task create failed");
+        }
+    }
+
+    if (keyReady != 0U)
+    {
+        if (xTaskCreate(App_KeyTask, "Key", APP_KEY_TASK_STACK_SIZE, NULL, APP_TASK_PRIORITY_KEY, NULL) != pdPASS)
+        {
+            debug_printfln("Key task create failed");
         }
     }
 
@@ -174,25 +208,62 @@ void App_main(void)
     }
 }
 
-static void App_OledTask(void *argument)
+static void App_KeyTask(void *argument)
 {
-    AppData_t dataSnapshot;
-    AppFocusState_t focusSnapshot;
+    DriKeyEvent_t event;
 
     (void)argument;
 
     for (;;)
     {
-        /* 只在锁内复制快照，I2C 刷屏放在解锁后执行，避免阻塞其他业务任务。 */
-        if (App_SystemLock(portMAX_DELAY) != 0U)
+        if (Dri_KeyScan(&event) != 0U)
         {
-            dataSnapshot = g_appData;
-            focusSnapshot = g_focusState;
-            App_SystemUnlock();
-            (void)App_OledUpdate(&dataSnapshot, &focusSnapshot);
+            App_KeyHandleEvent(&event);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(APP_OLED_UPDATE_PERIOD_MS));
+        vTaskDelay(pdMS_TO_TICKS(APP_KEY_SCAN_PERIOD_MS));
+    }
+}
+
+static void App_RunControlTask(void *argument)
+{
+    uint8_t finished;
+
+    (void)argument;
+
+    for (;;)
+    {
+        finished = 0U;
+
+        /* 只在锁内更新共享状态，I/O 和 UI 刷新均在释放锁后进行。 */
+        if (App_SystemLock(portMAX_DELAY) != 0U)
+        {
+            if ((g_appData.CurrentStatus == APP_MOTOR_STATUS_RUNNING) &&
+                (g_appData.RemainingTime > 0U))
+            {
+                g_appData.RemainingTime--;
+                if (g_appData.CurrentTime < g_appData.TargetTime)
+                {
+                    g_appData.CurrentTime++;
+                }
+
+                if (g_appData.RemainingTime == 0U)
+                {
+                    g_appData.CurrentTime = g_appData.TargetTime;
+                    g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
+                    g_motorStatus.Current = APP_MOTOR_STATUS_IDLE;
+                    finished = 1U;
+                }
+            }
+            App_SystemUnlock();
+        }
+
+        if (finished != 0U)
+        {
+            debug_printfln("Run complete, return to IDLE");
+        }
+        App_UiNotify();
+        vTaskDelay(pdMS_TO_TICKS(APP_RUN_CONTROL_PERIOD_MS));
     }
 }
 

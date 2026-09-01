@@ -231,6 +231,9 @@ uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus)
         return 0U;
     }
 
+    /* 仅清空 RAM 显存，完整组帧后一次性刷新，避免先清屏造成可见闪烁。 */
+    (void)memset(s_oledHandle.gram, 0, sizeof(s_oledHandle.gram));
+
     /* UID 的完整 96 位在 12 像素字体下无法放入一行，这里显示 UID 的 64 位高信息。 */
     (void)snprintf(line, sizeof(line), "ID:%08lX%08lX",
                    (unsigned long)data->Uid[1], (unsigned long)data->Uid[2]);
@@ -254,7 +257,7 @@ uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus)
 
     (void)snprintf(line, sizeof(line), "%cTIME:%lu/%lus",
                    App_OledFocusMark(focus, APP_FOCUS_TIME),
-                   (unsigned long)data->RemainingTime, (unsigned long)data->TargetTime);
+                   (unsigned long)data->CurrentTime, (unsigned long)data->TargetTime);
     length = (int)strlen(line);
     (void)ssd1315_gram_write_string(&s_oledHandle, APP_OLED_LINE_X, 36U,
                                     line, (uint16_t)length, 1U, APP_OLED_LINE_FONT);
