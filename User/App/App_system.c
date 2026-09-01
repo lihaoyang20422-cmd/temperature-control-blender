@@ -3,6 +3,7 @@
 #include "stm32f1xx_hal.h"
 #include "tim.h"
 #include "bsp_pins.h"
+#include "App_buzzer.h"
 
 /* 应用层共享状态；调度器启动后，所有读写操作都必须持有互斥锁。 */
 AppMotorStatus_t g_motorStatus = { APP_MOTOR_STATUS_IDLE };
@@ -169,6 +170,49 @@ uint8_t App_SystemSetFault(AppFault_t fault)
 
     /* 覆盖等待互斥锁期间可能发生的并发输出。 */
     App_SystemForceOutputsOff();
+    /* 统一故障报警：所有故障进入路径均启动持续蜂鸣，接口内部异步处理。 */
+    App_BuzzerSetContinuous(1U);
+    return 1U;
+}
+
+uint8_t App_SystemEnterFault(AppFault_t fault)
+{
+    /* 所有模块统一从该入口进入故障，确保危险输出先关闭。 */
+    return App_SystemSetFault(fault);
+}
+
+uint8_t App_SystemClearFault(AppFault_t fault)
+{
+    uint8_t stopAlarm = 0U;
+
+    if (fault == APP_FAULT_NONE)
+    {
+        return 0U;
+    }
+
+    /* 清除故障前仍保持所有输出关闭，避免恢复瞬间误启动。 */
+    App_SystemForceOutputsOff();
+    if (App_SystemLock(portMAX_DELAY) == 0U)
+    {
+        return 0U;
+    }
+
+    g_appData.FaultFlags &= ~((uint32_t)fault);
+    if (g_appData.FaultFlags == APP_FAULT_NONE)
+    {
+        g_appData.CurrentStatus = APP_MOTOR_STATUS_IDLE;
+        g_motorStatus.Current = APP_MOTOR_STATUS_IDLE;
+        s_motorFaultHandled = 0U;
+        /* 仅记录报警状态，实际蜂鸣器操作放到释放状态锁之后。 */
+        stopAlarm = 1U;
+    }
+    App_SystemUnlock();
+
+    /* 仅当所有故障均已清除时停止持续报警，避免覆盖其他模块的故障。 */
+    if (stopAlarm != 0U)
+    {
+        App_BuzzerSetContinuous(0U);
+    }
     return 1U;
 }
 

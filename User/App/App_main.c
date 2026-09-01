@@ -10,6 +10,7 @@
 #include "App_key.h"
 #include "App_ui.h"
 #include "App_rtc.h"
+#include "App_imu.h"
 #include "Dri_adc.h"
 #include "Dri_key.h"
 #include "bsp_pins.h"
@@ -145,6 +146,16 @@ void App_main(void)
     }
 
     /* 初始化搅拌电机编码器和 PWM 输出，初始化阶段不启动电机。 */
+    /* 先验证 LSM6DSM 的 SPI 通信，WHO_AM_I 不正确时暂不读取姿态数据。 */
+    if (App_ImuInit() == 0U)
+    {
+        debug_printfln("IMU bring-up failed");
+    }
+    else if (App_ImuCreateTask() == 0U)
+    {
+        debug_printfln("IMU task create failed");
+    }
+
     if (App_MotorInit() == 0U)
     {
         debug_printfln("Motor init failed");

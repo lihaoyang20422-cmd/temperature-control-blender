@@ -47,3 +47,4 @@ temperature_control_blender_hal\app_system.o: ./User/Mid/FreeRTOS/inc/list.h
 temperature_control_blender_hal\app_system.o: ../Core/Inc/tim.h
 temperature_control_blender_hal\app_system.o: ../Core/Inc/main.h
 temperature_control_blender_hal\app_system.o: ./User/Int/bsp_pins.h
+temperature_control_blender_hal\app_system.o: User\App\App_buzzer.h

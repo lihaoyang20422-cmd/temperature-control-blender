@@ -85,6 +85,12 @@ uint8_t App_SystemSetMotorStatus(AppMotorStatusValue_t status);
 /* 任务上下文故障入口：先关闭全部危险输出，再锁存故障位并进入 FAULT。 */
 uint8_t App_SystemSetFault(AppFault_t fault);
 
+/* 仅由对应故障所有者调用，清除自己的故障位并保持输出处于安全状态。 */
+uint8_t App_SystemClearFault(AppFault_t fault);
+
+/* 与业务约定一致的故障进入接口，内部复用统一安全停机流程。 */
+uint8_t App_SystemEnterFault(AppFault_t fault);
+
 /*
  * 周期检查两个共享状态字段；即使其他代码直接写入故障状态，也能触发安全钩子。
  * 后续建议由系统监控任务以固定周期调用，不能在中断中调用。

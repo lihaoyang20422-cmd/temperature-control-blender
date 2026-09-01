@@ -54,6 +54,7 @@ temperature_control_blender_hal\app_main.o: User\App\App_ui.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/task.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/list.h
 temperature_control_blender_hal\app_main.o: User\App\App_rtc.h
+temperature_control_blender_hal\app_main.o: User\App\App_imu.h
 temperature_control_blender_hal\app_main.o: ./User/Dri/Dri_adc.h
 temperature_control_blender_hal\app_main.o: ./User/Int/bsp_pins.h
 temperature_control_blender_hal\app_main.o: ../Core/Inc/main.h

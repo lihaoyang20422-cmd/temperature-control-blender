@@ -674,6 +674,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_rtc.h</FilePath>
             </File>
+            <File>
+              <FileName>App_imu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_imu.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_imu.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_imu.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -718,6 +728,16 @@
               <FileName>Int_I2C1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Int\Int_I2C1.h</FilePath>
+            </File>
+            <File>
+              <FileName>Int_SPI2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Int\Int_SPI2.c</FilePath>
+            </File>
+            <File>
+              <FileName>Int_SPI2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Int\Int_SPI2.h</FilePath>
             </File>
           </Files>
         </Group>
