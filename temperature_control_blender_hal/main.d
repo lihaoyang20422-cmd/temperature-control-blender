@@ -39,6 +39,7 @@ temperature_control_blender_hal\main.o: ../Core/Inc/spi.h
 temperature_control_blender_hal\main.o: ../Core/Inc/tim.h
 temperature_control_blender_hal\main.o: ../Core/Inc/usart.h
 temperature_control_blender_hal\main.o: ../Core/Inc/gpio.h
+temperature_control_blender_hal\main.o: ../Core/Inc/can.h
 temperature_control_blender_hal\main.o: D:\software1\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 temperature_control_blender_hal\main.o: ./User/Mid/FreeRTOS/inc/FreeRTOS.h
 temperature_control_blender_hal\main.o: ./User/Mid/FreeRTOS/FreeRTOSConfig.h

@@ -11,6 +11,8 @@
 #include "App_rtc.h"
 #include "App_bluetooth.h"
 #include "App_imu.h"
+#include "App_can.h"
+#include "App_modbus.h"
 #include "Dri_key.h"
 #include "Int_I2C1.h"
 #include "Int_I2C2.h"
@@ -22,6 +24,7 @@
 #define APP_STORAGE_TASK_STACK_SIZE     192U
 #define APP_KEY_TASK_STACK_SIZE         256U
 #define APP_KEY_SCAN_PERIOD_MS          10U
+#define APP_MOTOR_ENCODER_TEST_ENABLE   0U
 
 typedef enum
 {
@@ -100,6 +103,25 @@ void App_main(void)
         debug_printfln("Bluetooth task create failed");
     }
 
+    /* CAN1和UART4 Modbus均在调度器启动前完成协议栈初始化，再创建各自任务。 */
+    if (App_CanInit() == 0U)
+    {
+        debug_printfln("CAN init failed");
+    }
+    else if (App_CanCreateTask() == 0U)
+    {
+        debug_printfln("CAN task create failed");
+    }
+
+    if (App_ModbusInit() == 0U)
+    {
+        debug_printfln("Modbus init failed");
+    }
+    else if (App_ModbusCreateTask() == 0U)
+    {
+        debug_printfln("Modbus task create failed");
+    }
+
     /* 验证 LSM6DSM 通信并创建倾倒检测任务。 */
     if (App_ImuInit() == 0U)
     {
@@ -166,6 +188,7 @@ void App_main(void)
     /* 根据条件编译选择临时编码器验证任务或正式电机闭环任务。 */
 #ifdef APP_MOTOR_ENCODER_TEST_ENABLE
     /* 编码器验证期间只创建累计计数任务，避免与PID控制任务同时读取编码器。 */
+#if (APP_MOTOR_ENCODER_TEST_ENABLE != 0U)
     if (App_MotorCreateEncoderTestTask() == 0U)
     {
         debug_printfln("Encoder test task create failed");
@@ -173,6 +196,7 @@ void App_main(void)
         {
         }
     }
+#endif
 #else
     if (App_MotorCreateTask() == 0U)
     {

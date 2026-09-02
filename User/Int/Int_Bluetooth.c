@@ -1,4 +1,5 @@
 #include "Int_Bluetooth.h"
+#include "App_modbus.h"
 #include "usart.h"
 #include "stm32f1xx_hal.h"
 
@@ -65,5 +66,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         }
 
         (void)HAL_UART_Receive_IT(&huart2, &s_rxByte, 1U);
+    }
+    else if (huart == &huart4)
+    {
+        /* UART4由FreeModbus端口层接管，蓝牙环形缓冲区不参与Modbus接收。 */
+        App_ModbusRxCpltCallback(huart);
     }
 }

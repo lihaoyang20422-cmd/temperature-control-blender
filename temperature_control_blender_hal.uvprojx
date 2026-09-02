@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F103xE,COM_VOFA_ENABLE</Define>
+              <Define>USE_HAL_DRIVER,STM32F103xE,COM_DEBUG_ENABLE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;./User/App;./User/Com;./User/Dri;./User/Int;./User/Mid;./User/Mid/FreeRTOS;./User/Mid/FreeRTOS/src;./User/Mid/FreeRTOS/port;./User/Mid/FreeRTOS/inc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;./User/App;./User/Com;./User/Dri;./User/Int;./User/Mid;./User/Mid/FreeRTOS;./User/Mid/FreeRTOS/src;./User/Mid/FreeRTOS/port;./User/Mid/FreeRTOS/inc;./User/Mid/free_modbus/modbus/include;./User/Mid/free_modbus/modbus/rtu;./User/Mid/free_modbus/port</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -694,6 +694,36 @@
               <FileType>5</FileType>
               <FilePath>.\User\App\App_imu.h</FilePath>
             </File>
+            <File>
+              <FileName>App_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_protocol.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_protocol.h</FilePath>
+            </File>
+            <File>
+              <FileName>App_can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_can.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_can.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_can.h</FilePath>
+            </File>
+            <File>
+              <FileName>App_modbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_modbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_modbus.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_modbus.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -763,6 +793,133 @@
         </Group>
         <Group>
           <GroupName>Mid</GroupName>
+          <Files>
+            <File>
+              <FileName>mb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\mb.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfunccoils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfunccoils.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncdiag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfuncdiag.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncdisc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfuncdisc.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncfile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfuncfile.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncholding.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfuncholding.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncinput.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfuncinput.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncother.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbfuncother.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbutils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\functions\mbutils.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbcrc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\rtu\mbcrc.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbrtu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\rtu\mbrtu.c</FilePath>
+            </File>
+            <File>
+              <FileName>portevent.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\port\portevent.c</FilePath>
+            </File>
+            <File>
+              <FileName>portserial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\port\portserial.c</FilePath>
+            </File>
+            <File>
+              <FileName>porttimer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Mid\free_modbus\port\porttimer.c</FilePath>
+            </File>
+            <File>
+              <FileName>port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\port\port.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_freemodbus_port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\port\app_freemodbus_port.h</FilePath>
+            </File>
+            <File>
+              <FileName>mb.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mb.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbconfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mbconfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbframe.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mbframe.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbfunc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mbfunc.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbport.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mbport.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbproto.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mbproto.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbutils.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\include\mbutils.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbcrc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\rtu\mbcrc.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbrtu.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Mid\free_modbus\modbus\rtu\mbrtu.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>Dri</GroupName>

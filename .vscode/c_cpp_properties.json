@@ -17,16 +17,21 @@
                 "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\FreeRTOS\\src",
                 "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\FreeRTOS\\port",
                 "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\FreeRTOS\\inc",
+                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\free_modbus\\modbus\\include",
+                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\free_modbus\\modbus\\rtu",
+                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\free_modbus\\port",
                 "D:\\software1\\Keil_v5\\ARM\\ARMCC\\include",
                 "D:\\software1\\Keil_v5\\ARM\\ARMCC\\include\\rw",
                 "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM",
                 "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\Core\\Src",
-                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\Drivers\\STM32F1xx_HAL_Driver\\Src"
+                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\Drivers\\STM32F1xx_HAL_Driver\\Src",
+                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\free_modbus\\modbus",
+                "d:\\Projects\\project9-blender\\temperature_control_blender_hal\\MDK-ARM\\User\\Mid\\free_modbus\\modbus\\functions"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
                 "STM32F103xE",
-                "COM_VOFA_ENABLE",
+                "COM_DEBUG_ENABLE",
                 "__CC_ARM",
                 "__arm__",
                 "__align(x)=",

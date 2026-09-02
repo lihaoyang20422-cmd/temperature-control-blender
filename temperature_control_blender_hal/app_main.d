@@ -56,7 +56,10 @@ temperature_control_blender_hal\app_main.o: User\App\App_rtc.h
 temperature_control_blender_hal\app_main.o: ./User/Dri/Dri_ds3231.h
 temperature_control_blender_hal\app_main.o: User\App\App_bluetooth.h
 temperature_control_blender_hal\app_main.o: User\App\App_imu.h
+temperature_control_blender_hal\app_main.o: User\App\App_can.h
+temperature_control_blender_hal\app_main.o: User\App\App_modbus.h
+temperature_control_blender_hal\app_main.o: ../Core/Inc/usart.h
+temperature_control_blender_hal\app_main.o: ../Core/Inc/main.h
 temperature_control_blender_hal\app_main.o: ./User/Int/Int_I2C1.h
 temperature_control_blender_hal\app_main.o: ../Core/Inc/i2c.h
-temperature_control_blender_hal\app_main.o: ../Core/Inc/main.h
 temperature_control_blender_hal\app_main.o: ./User/Int/Int_I2C2.h

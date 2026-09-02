@@ -1,6 +1,7 @@
 temperature_control_blender_hal\int_bluetooth.o: User\Int\Int_Bluetooth.c
 temperature_control_blender_hal\int_bluetooth.o: User\Int\Int_Bluetooth.h
 temperature_control_blender_hal\int_bluetooth.o: D:\software1\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+temperature_control_blender_hal\int_bluetooth.o: ./User/App/App_modbus.h
 temperature_control_blender_hal\int_bluetooth.o: ../Core/Inc/usart.h
 temperature_control_blender_hal\int_bluetooth.o: ../Core/Inc/main.h
 temperature_control_blender_hal\int_bluetooth.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h

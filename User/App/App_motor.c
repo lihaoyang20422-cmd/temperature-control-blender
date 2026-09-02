@@ -12,6 +12,7 @@
 #define APP_MOTOR_VOFA_PERIOD_MS          100U
 #define APP_MOTOR_DEBUG_PERIOD_MS         1000U
 #define APP_MOTOR_ENCODER_TEST_PERIOD_MS  100U
+#define APP_MOTOR_LOG_ENABLE              0U
 #define APP_MOTOR_ENCODER_TEST_STACK_SIZE 128U
 #define APP_MOTOR_ENCODER_COUNTS_PER_REV  8.0f
 #define APP_MOTOR_SPEED_AVG_SAMPLES       8U
@@ -294,10 +295,15 @@ static void App_MotorTask(void *argument)
     int16_t speedToStore;
     AppMotorStatusValue_t status;
     TickType_t lastControlTick;
-#if defined(COM_VOFA_ENABLE)
+#if (APP_MOTOR_LOG_ENABLE != 0U) && defined(COM_VOFA_ENABLE)
     TickType_t lastVofaTick;
-#elif defined(COM_DEBUG_ENABLE)
+#elif (APP_MOTOR_LOG_ENABLE != 0U) && defined(COM_DEBUG_ENABLE)
     TickType_t lastDebugTick;
+#endif
+
+#if (APP_MOTOR_LOG_ENABLE == 0U)
+    /* 关闭日志时仍保留占空比缓存，显式读取以避免 ARMCC 未使用变量告警。 */
+    (void)s_lastDuty;
 #endif
 
     (void)argument;
@@ -305,9 +311,9 @@ static void App_MotorTask(void *argument)
     s_lastEncoderCount = encoderCount;
     App_MotorResetController();
     lastControlTick = xTaskGetTickCount();
-#if defined(COM_VOFA_ENABLE)
+#if (APP_MOTOR_LOG_ENABLE != 0U) && defined(COM_VOFA_ENABLE)
     lastVofaTick = lastControlTick;
-#elif defined(COM_DEBUG_ENABLE)
+#elif (APP_MOTOR_LOG_ENABLE != 0U) && defined(COM_DEBUG_ENABLE)
     lastDebugTick = lastControlTick;
 #endif
 
@@ -387,7 +393,7 @@ static void App_MotorTask(void *argument)
         }
         App_MotorUpdateCurrentSpeed(speedToStore);
 
-#ifdef COM_VOFA_ENABLE
+#if (APP_MOTOR_LOG_ENABLE != 0U) && defined(COM_VOFA_ENABLE)
         if ((xTaskGetTickCount() - lastVofaTick) >=
             pdMS_TO_TICKS(APP_MOTOR_VOFA_PERIOD_MS))
         {
@@ -402,7 +408,7 @@ static void App_MotorTask(void *argument)
                                    (uint16_t)(s_lastDuty * 100.0f),
                                    deltaCount);
         }
-#elif defined(COM_DEBUG_ENABLE)
+#elif (APP_MOTOR_LOG_ENABLE != 0U) && defined(COM_DEBUG_ENABLE)
         /* 恢复普通调试模式时，保留原有的人类可读电机日志。 */
         if ((status == APP_MOTOR_STATUS_RUNNING) &&
             ((xTaskGetTickCount() - lastDebugTick) >=
