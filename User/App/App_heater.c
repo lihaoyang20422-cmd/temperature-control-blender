@@ -40,6 +40,8 @@
 #define APP_HEATER_BOOT_CAL_SAMPLES      10U
 #define APP_HEATER_BOOT_CAL_INTERVAL_MS  100U
 #define APP_HEATER_BOOT_CAL_MAX_DIFF_C   8.0f
+#define APP_HEATER_FAN_COOLDOWN_MS       60000U
+#define APP_HEATER_ADC_SATURATION        4090U
 
 typedef struct
 {
@@ -51,22 +53,60 @@ typedef struct
 static AppHeaterPid_t s_heaterPid;
 static TaskHandle_t s_heaterTaskHandle;
 static uint8_t s_pwmStarted;
-static uint8_t s_faultReported;
+static volatile uint8_t s_faultReported;
 static float s_boardTemperatureBase;
 static float s_boardTemperatureOffset;
 static float s_liquidTemperatureOffset;
 static uint8_t s_coldCalibrationReady;
+static TickType_t s_fanCooldownDeadline;
+static uint8_t s_fanCooldownActive;
+static uint8_t s_heatingActive;
 
-static void App_HeaterStopOutput(void)
+static void App_HeaterStopPwmOnly(void)
 {
     /* 先清比较值再停止通道，避免 PA0 停止时残留有效电平。 */
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0U);
     (void)HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
     /* MOTOR_ON 是风扇开关；加热停止时同步关闭，满足 IDLE/FAULT 安全状态。 */
-    HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin,
-                      MOTOR_ON_INACTIVE_STATE);
     s_pwmStarted = 0U;
     s_heaterPid.lastDuty = 0.0f;
+}
+
+static void App_HeaterStopOutput(void)
+{
+    /* IDLE/FAULT 状态下必须同时关闭加热 PWM 和风扇。 */
+    App_HeaterStopPwmOnly();
+    HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin,
+                      MOTOR_ON_INACTIVE_STATE);
+    s_fanCooldownActive = 0U;
+    s_heatingActive = 0U;
+}
+
+static void App_HeaterStartFan(void)
+{
+    HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin,
+                      MOTOR_ON_ACTIVE_STATE);
+    s_fanCooldownActive = 0U;
+}
+
+static void App_HeaterBeginFanCooldown(void)
+{
+    /* 正常运行中停止加热时保留风扇 60 秒；FAULT/IDLE 仍由 StopOutput 立即关闭。 */
+    HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin,
+                      MOTOR_ON_ACTIVE_STATE);
+    s_fanCooldownDeadline = xTaskGetTickCount() + pdMS_TO_TICKS(APP_HEATER_FAN_COOLDOWN_MS);
+    s_fanCooldownActive = 1U;
+}
+
+static void App_HeaterUpdateFanCooldown(void)
+{
+    if ((s_fanCooldownActive != 0U) &&
+        ((int32_t)(xTaskGetTickCount() - s_fanCooldownDeadline) >= 0))
+    {
+        HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin,
+                          MOTOR_ON_INACTIVE_STATE);
+        s_fanCooldownActive = 0U;
+    }
 }
 
 static void App_HeaterResetPid(void)
@@ -235,10 +275,18 @@ static void App_HeaterApplyDuty(float duty)
 
     if (duty <= 0.0f)
     {
-        App_HeaterStopOutput();
+        App_HeaterStopPwmOnly();
+        /* 仅在本次确实从“正在加热”切换到“停止加热”时装载一次 60 秒计时。 */
+        if (s_heatingActive != 0U)
+        {
+            s_heatingActive = 0U;
+            App_HeaterBeginFanCooldown();
+        }
         return;
     }
 
+    App_HeaterStartFan();
+    s_heatingActive = 1U;
     /* 只有真正需要加热时才开启散热风扇。 */
     HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin,
                       MOTOR_ON_ACTIVE_STATE);
@@ -307,6 +355,7 @@ static void App_HeaterTask(void *argument)
     float duty;
     TickType_t lastDebugTick;
     uint8_t adcFailureCount = 0U;
+    uint8_t adcInvalidCount = 0U;
 
     (void)argument;
     App_HeaterColdCalibrate();
@@ -336,6 +385,20 @@ static void App_HeaterTask(void *argument)
             continue;
         }
         adcFailureCount = 0U;
+
+        /* 采样值接近满量程时认为 ADC 输入异常，连续 3 次才进入故障。 */
+        if ((sample.heatCurrent >= APP_HEATER_ADC_SATURATION) ||
+            (sample.supply24V >= APP_HEATER_ADC_SATURATION))
+        {
+            adcInvalidCount++;
+            if (adcInvalidCount >= 3U)
+            {
+                App_HeaterEnterFault(APP_FAULT_ADC_RUNTIME,
+                                      "Heater ADC value abnormal");
+            }
+            continue;
+        }
+        adcInvalidCount = 0U;
 
         if ((App_HeaterNtcValid(sample.boardNtc) == 0U) ||
             (App_HeaterNtcValid(sample.liquidNtc) == 0U))
@@ -397,6 +460,8 @@ static void App_HeaterTask(void *argument)
             App_HeaterStopOutput();
         }
 
+        App_HeaterUpdateFanCooldown();
+
         if ((xTaskGetTickCount() - lastDebugTick) >=
             pdMS_TO_TICKS(APP_HEATER_DEBUG_PERIOD_MS))
         {
@@ -419,6 +484,9 @@ uint8_t App_HeaterInit(void)
     s_boardTemperatureOffset = 0.0f;
     s_liquidTemperatureOffset = 0.0f;
     s_coldCalibrationReady = 0U;
+    s_fanCooldownDeadline = 0U;
+    s_fanCooldownActive = 0U;
+    s_heatingActive = 0U;
 
     /*
      * PC2 使用开漏输出，板上 R36 将其上拉到 3.3 V。低脉冲复位锁存器后，
@@ -449,4 +517,77 @@ void App_HeaterExtiCallback(uint16_t gpioPin)
         vTaskNotifyGiveFromISR(s_heaterTaskHandle, &higherPriorityTaskWoken);
         portYIELD_FROM_ISR(higherPriorityTaskWoken);
     }
+}
+
+uint8_t App_HeaterTryClearFault(void)
+{
+    const uint32_t heaterFaultMask = (uint32_t)(APP_FAULT_HEATER_SENSOR |
+                                                APP_FAULT_HEATER_OVERTEMP |
+                                                APP_FAULT_HEATER_ELECTRICAL |
+                                                APP_FAULT_ADC_RUNTIME);
+    DriAdcSample_t sample;
+    uint32_t faultFlags;
+    float boardTemperature;
+    float liquidTemperature;
+
+    if (App_SystemLock(portMAX_DELAY) == 0U)
+    {
+        return 0U;
+    }
+    faultFlags = g_appData.FaultFlags;
+    App_SystemUnlock();
+
+    if ((faultFlags & heaterFaultMask) == 0U)
+    {
+        return 0U;
+    }
+    if (HAL_GPIO_ReadPin(HEAT_FAULT_N_GPIO_Port, HEAT_FAULT_N_Pin) ==
+        HEAT_FAULT_ACTIVE_STATE)
+    {
+        debug_printfln("Heater fault clear rejected: hardware fault remains");
+        return 0U;
+    }
+    if ((Dri_AdcReadAll(&sample) == 0U) ||
+        (sample.heatCurrent >= APP_HEATER_ADC_SATURATION) ||
+        (sample.supply24V >= APP_HEATER_ADC_SATURATION) ||
+        (App_HeaterNtcValid(sample.boardNtc) == 0U) ||
+        (App_HeaterNtcValid(sample.liquidNtc) == 0U))
+    {
+        debug_printfln("Heater fault clear rejected: ADC or NTC invalid");
+        return 0U;
+    }
+
+    boardTemperature = App_HeaterNtcToTemperature(sample.boardNtc) +
+                       s_boardTemperatureOffset;
+    liquidTemperature = App_HeaterNtcToTemperature(sample.liquidNtc) +
+                        s_liquidTemperatureOffset;
+    boardTemperature = App_HeaterCompensateBoardTemperature(boardTemperature);
+    if ((boardTemperature >= APP_HEATER_BOARD_OVERTEMP_C) ||
+        (liquidTemperature >= APP_HEATER_LIQUID_OVERTEMP_C))
+    {
+        debug_printfln("Heater fault clear rejected: overtemperature remains");
+        return 0U;
+    }
+
+    /* 重新复位硬件故障锁存器，随后确认故障输入已经释放。 */
+    HAL_GPIO_WritePin(FAULT_RST_N_GPIO_Port, FAULT_RST_N_Pin,
+                      FAULT_RST_ASSERT_STATE);
+    HAL_Delay(APP_HEATER_FAULT_RESET_MS);
+    HAL_GPIO_WritePin(FAULT_RST_N_GPIO_Port, FAULT_RST_N_Pin,
+                      FAULT_RST_RELEASE_STATE);
+    if (HAL_GPIO_ReadPin(HEAT_FAULT_N_GPIO_Port, HEAT_FAULT_N_Pin) ==
+        HEAT_FAULT_ACTIVE_STATE)
+    {
+        debug_printfln("Heater fault clear rejected after reset");
+        return 0U;
+    }
+
+    if (App_SystemClearFault((AppFault_t)heaterFaultMask) == 0U)
+    {
+        return 0U;
+    }
+    s_faultReported = 0U;
+    debug_printfln("Heater fault cleared by KEY1");
+    App_UiNotify();
+    return 1U;
 }

@@ -30,6 +30,18 @@ static void App_OledDebugPrint(const char *const format, ...);
 static const char *App_OledStatusName(AppMotorStatusValue_t status);
 static char App_OledFocusMark(const AppFocusState_t *focus, AppFocusItem_t item);
 
+static uint8_t App_OledWriteLine(uint8_t x, uint8_t y, const char *text,
+                                 ssd1315_font_t font)
+{
+    if (text == NULL)
+    {
+        return 0U;
+    }
+
+    return (ssd1315_gram_write_string(&s_oledHandle, x, y, (char *)text,
+                                      (uint16_t)strlen(text), 1U, font) == 0U) ? 1U : 0U;
+}
+
 static uint8_t App_OledCheck(uint8_t result, const char *name)
 {
     if (result != 0U)
@@ -221,10 +233,51 @@ static char App_OledFocusMark(const AppFocusState_t *focus, AppFocusItem_t item)
     return ' ';
 }
 
+uint8_t App_OledUpdateHome(const AppData_t *data)
+{
+    char line[24];
+
+    if ((s_oledHandle.inited != 1U) || (data == NULL))
+    {
+        return 0U;
+    }
+
+    /* 在 RAM 中完成整页组帧，最后一次性更新 OLED，避免肉眼可见的清屏闪烁。 */
+    (void)memset(s_oledHandle.gram, 0, sizeof(s_oledHandle.gram));
+
+    /* 当前面板的 COM 扫描方向使逻辑 Y 坐标与物理上下方向相反。 */
+    if (App_OledWriteLine(44U, 48U, "Ayang", SSD1315_FONT_16) == 0U)
+    {
+        return 0U;
+    }
+
+    (void)snprintf(line, sizeof(line), "%04u-%02u-%02u",
+                   (unsigned int)data->RtcTime.Year,
+                   (unsigned int)data->RtcTime.Month,
+                   (unsigned int)data->RtcTime.Date);
+    if (App_OledWriteLine(34U, 28U, line, SSD1315_FONT_12) == 0U)
+    {
+        return 0U;
+    }
+
+    (void)snprintf(line, sizeof(line), "%02u:%02u:%02u",
+                   (unsigned int)data->RtcTime.Hours,
+                   (unsigned int)data->RtcTime.Minutes,
+                   (unsigned int)data->RtcTime.Seconds);
+    if ((App_OledWriteLine(40U, 16U, line, SSD1315_FONT_12) == 0U) ||
+        (App_OledWriteLine(40U, 48U, "KEY4:SET", SSD1315_FONT_12) == 0U))
+    {
+        return 0U;
+    }
+
+    return (ssd1315_gram_update(&s_oledHandle) == 0U) ? 1U : 0U;
+}
+
 uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus)
 {
     char line[24];
     int length;
+    uint32_t shortUid;
 
     if ((s_oledHandle.inited != 1U) || (data == NULL) || (focus == NULL))
     {
@@ -235,8 +288,9 @@ uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus)
     (void)memset(s_oledHandle.gram, 0, sizeof(s_oledHandle.gram));
 
     /* UID 的完整 96 位在 12 像素字体下无法放入一行，这里显示 UID 的 64 位高信息。 */
-    (void)snprintf(line, sizeof(line), "ID:%08lX%08lX",
-                   (unsigned long)data->Uid[1], (unsigned long)data->Uid[2]);
+    /* 将完整 96 位 UID 异或压缩为 32 位短 ID，仅用于 OLED 显示；完整 UID 仍保存在状态结构体中。 */
+    shortUid = data->Uid[0] ^ data->Uid[1] ^ data->Uid[2];
+    (void)snprintf(line, sizeof(line), "ID:%08lX", (unsigned long)shortUid);
     length = (int)strlen(line);
     (void)ssd1315_gram_write_string(&s_oledHandle, APP_OLED_LINE_X, 0U,
                                     line, (uint16_t)length, 1U, APP_OLED_LINE_FONT);

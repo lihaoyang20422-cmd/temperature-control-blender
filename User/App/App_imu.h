@@ -20,4 +20,7 @@ void App_ImuExtiCallback(uint16_t GPIO_Pin);
 uint8_t App_ImuIsTilted(const AppImuAccelRaw_t *accel);
 uint8_t App_ImuGetAccel(AppImuAccelRaw_t *accel);
 
+/* 由 KEY1 长按请求清除倾倒故障，只有连续恢复正常后才允许清除。 */
+uint8_t App_ImuTryClearFault(void);
+
 #endif /* APP_IMU_H */

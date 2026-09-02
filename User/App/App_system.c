@@ -216,6 +216,8 @@ uint8_t App_SystemClearFault(AppFault_t fault)
     return 1U;
 }
 
+/* 已按产品方案移除未接入的系统安全监控函数，保留以下旧实现以便历史追溯。 */
+#if 0
 void App_SystemSafetyCheck(void)
 {
     uint8_t callFaultHook = 0U;
@@ -251,6 +253,8 @@ void App_SystemSafetyCheck(void)
         App_SystemMotorFaultHook();
     }
 }
+
+#endif
 
 __weak void App_SystemMotorFaultHook(void)
 {

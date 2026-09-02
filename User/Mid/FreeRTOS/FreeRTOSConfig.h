@@ -1,5 +1,5 @@
 /*
- * FreeRTOS configuration for STM32F405RGT6 / Cortex-M4F.
+ * FreeRTOS 配置：STM32F103RCT6 / Cortex-M3。
  */
 
 #ifndef FREERTOS_CONFIG_H
@@ -33,7 +33,7 @@ extern uint32_t SystemCoreClock;
 
 #define configSUPPORT_STATIC_ALLOCATION         0
 #define configSUPPORT_DYNAMIC_ALLOCATION        1
-#define configTOTAL_HEAP_SIZE                   ( ( size_t ) ( 32 * 1024 ) )
+#define configTOTAL_HEAP_SIZE                   ( ( size_t ) ( 24 * 1024 ) )
 
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0

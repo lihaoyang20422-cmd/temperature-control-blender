@@ -4,12 +4,15 @@
 #include "App_system.h"
 #include "App_storage.h"
 #include "App_ui.h"
+#include "App_imu.h"
+#include "App_heater.h"
 #include "Com_debug.h"
 
 static void App_KeyChangeFocus(void);
 static void App_KeyAdjustTarget(int16_t delta);
 static void App_KeyToggleRunIdle(void);
 static void App_KeyClearTargets(void);
+static void App_KeyClearFault(void);
 static void App_KeyLogEvent(const DriKeyEvent_t *event);
 
 static void App_KeyLogEvent(const DriKeyEvent_t *event)
@@ -38,6 +41,17 @@ void App_KeyHandleEvent(const DriKeyEvent_t *event)
 
     App_KeyLogEvent(event);
 
+    /* 开机首页只接受 KEY4 短按进入设置页，其他按键不会修改参数或启动设备。 */
+    if (App_UiGetPage() == APP_UI_PAGE_HOME)
+    {
+        if ((event->key == DRI_KEY_4) &&
+            (event->type == DRI_KEY_EVENT_SHORT))
+        {
+            (void)App_UiEnterSettingsPage();
+        }
+        return;
+    }
+
     /* 短按或长按确认时播放提示音，重复调节事件不重复鸣叫。故障连续
        报警期间由蜂鸣器模块自动屏蔽该短鸣。 */
     if ((event->type == DRI_KEY_EVENT_SHORT) ||
@@ -54,6 +68,10 @@ void App_KeyHandleEvent(const DriKeyEvent_t *event)
             if (event->type == DRI_KEY_EVENT_SHORT)
             {
                 App_KeyChangeFocus();
+            }
+            else if (event->type == DRI_KEY_EVENT_LONG)
+            {
+                App_KeyClearFault();
             }
             break;
 
@@ -253,4 +271,42 @@ static void App_KeyClearTargets(void)
     }
     /* 长按清零同样需要持久化，避免复位后恢复旧设置。 */
     App_StorageRequestSave();
+}
+
+static void App_KeyClearFault(void)
+{
+    uint32_t faultFlags;
+    uint8_t handled = 0U;
+
+    if (App_SystemLock(portMAX_DELAY) == 0U)
+    {
+        return;
+    }
+    if (g_appData.CurrentStatus != APP_MOTOR_STATUS_FAULT)
+    {
+        App_SystemUnlock();
+        return;
+    }
+    faultFlags = g_appData.FaultFlags;
+    App_SystemUnlock();
+
+    /* 各模块只清除自己拥有的故障位，KEY1 仅负责发起用户确认。 */
+    if ((faultFlags & APP_FAULT_IMU_TILT) != 0U)
+    {
+        handled = (App_ImuTryClearFault() != 0U) ? 1U : handled;
+    }
+
+    if ((faultFlags & (APP_FAULT_HEATER_SENSOR |
+                       APP_FAULT_HEATER_OVERTEMP |
+                       APP_FAULT_HEATER_ELECTRICAL |
+                       APP_FAULT_ADC_RUNTIME)) != 0U)
+    {
+        handled = (App_HeaterTryClearFault() != 0U) ? 1U : handled;
+    }
+
+    if (handled == 0U)
+    {
+        debug_printfln("Fault clear rejected: condition not recovered");
+    }
+    App_UiNotify();
 }

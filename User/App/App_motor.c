@@ -323,8 +323,8 @@ void App_MotorStop(void)
     s_lastDuty = 0.0f;
 }
 
-void App_MotorCreateTask(void)
+uint8_t App_MotorCreateTask(void)
 {
-    (void)xTaskCreate(App_MotorTask, "Motor", 320U, NULL,
-                      tskIDLE_PRIORITY + 2U, NULL);
+    return (xTaskCreate(App_MotorTask, "Motor", 320U, NULL,
+                        tskIDLE_PRIORITY + 2U, NULL) == pdPASS) ? 1U : 0U;
 }

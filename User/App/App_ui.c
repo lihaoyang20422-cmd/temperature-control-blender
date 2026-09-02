@@ -5,6 +5,18 @@
 #define APP_UI_UPDATE_PERIOD_MS 100U
 
 static TaskHandle_t s_uiTaskHandle = NULL;
+static volatile AppUiPage_t s_uiPage = APP_UI_PAGE_HOME;
+
+static uint8_t App_UiHomeChanged(const AppData_t *currentData,
+                                 const AppData_t *displayedData)
+{
+    return ((currentData->RtcTime.Year != displayedData->RtcTime.Year) ||
+            (currentData->RtcTime.Month != displayedData->RtcTime.Month) ||
+            (currentData->RtcTime.Date != displayedData->RtcTime.Date) ||
+            (currentData->RtcTime.Hours != displayedData->RtcTime.Hours) ||
+            (currentData->RtcTime.Minutes != displayedData->RtcTime.Minutes) ||
+            (currentData->RtcTime.Seconds != displayedData->RtcTime.Seconds)) ? 1U : 0U;
+}
 
 /* 只比较 OLED 实际显示的字段，避免数据未变化时重复传输整帧。 */
 static uint8_t App_UiDisplayChanged(const AppData_t *currentData,
@@ -48,13 +60,33 @@ void App_UiNotify(void)
     }
 }
 
+AppUiPage_t App_UiGetPage(void)
+{
+    return s_uiPage;
+}
+
+uint8_t App_UiEnterSettingsPage(void)
+{
+    if (s_uiPage != APP_UI_PAGE_HOME)
+    {
+        return 0U;
+    }
+
+    s_uiPage = APP_UI_PAGE_SETTINGS;
+    App_UiNotify();
+    return 1U;
+}
+
 void App_UiTask(void *argument)
 {
     AppData_t dataSnapshot;
     AppFocusState_t focusSnapshot;
     AppData_t displayedData = { 0 };
     AppFocusState_t displayedFocus = { APP_FOCUS_TEMPERATURE, APP_FOCUS_TEMPERATURE };
+    AppUiPage_t currentPage;
+    AppUiPage_t displayedPage = APP_UI_PAGE_HOME;
     uint8_t firstFrame = 1U;
+    uint8_t updateOk;
 
     (void)argument;
     s_uiTaskHandle = xTaskGetCurrentTaskHandle();
@@ -70,16 +102,24 @@ void App_UiTask(void *argument)
             dataSnapshot = g_appData;
             focusSnapshot = g_focusState;
             App_SystemUnlock();
+            currentPage = s_uiPage;
 
             /* 100 ms 周期只负责检查状态，显示内容不变时不占用 I2C1 总线。 */
-            if ((firstFrame != 0U) ||
-                (App_UiDisplayChanged(&dataSnapshot, &focusSnapshot,
-                                      &displayedData, &displayedFocus) != 0U))
+            if ((firstFrame != 0U) || (currentPage != displayedPage) ||
+                ((currentPage == APP_UI_PAGE_HOME) &&
+                 (App_UiHomeChanged(&dataSnapshot, &displayedData) != 0U)) ||
+                ((currentPage == APP_UI_PAGE_SETTINGS) &&
+                 (App_UiDisplayChanged(&dataSnapshot, &focusSnapshot,
+                                       &displayedData, &displayedFocus) != 0U)))
             {
-                if (App_OledUpdate(&dataSnapshot, &focusSnapshot) != 0U)
+                updateOk = (currentPage == APP_UI_PAGE_HOME) ?
+                           App_OledUpdateHome(&dataSnapshot) :
+                           App_OledUpdate(&dataSnapshot, &focusSnapshot);
+                if (updateOk != 0U)
                 {
                     displayedData = dataSnapshot;
                     displayedFocus = focusSnapshot;
+                    displayedPage = currentPage;
                     firstFrame = 0U;
                 }
             }

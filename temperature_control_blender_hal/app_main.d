@@ -43,7 +43,6 @@ temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/portable.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/deprecated_definitions.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/port/portmacro.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/mpu_wrappers.h
-temperature_control_blender_hal\app_main.o: User\App\App_m24c02.h
 temperature_control_blender_hal\app_main.o: User\App\App_storage.h
 temperature_control_blender_hal\app_main.o: User\App\App_oled.h
 temperature_control_blender_hal\app_main.o: User\App\App_motor.h
@@ -54,10 +53,10 @@ temperature_control_blender_hal\app_main.o: User\App\App_ui.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/task.h
 temperature_control_blender_hal\app_main.o: ./User/Mid/FreeRTOS/inc/list.h
 temperature_control_blender_hal\app_main.o: User\App\App_rtc.h
+temperature_control_blender_hal\app_main.o: ./User/Dri/Dri_ds3231.h
+temperature_control_blender_hal\app_main.o: User\App\App_bluetooth.h
 temperature_control_blender_hal\app_main.o: User\App\App_imu.h
-temperature_control_blender_hal\app_main.o: ./User/Dri/Dri_adc.h
-temperature_control_blender_hal\app_main.o: ./User/Int/bsp_pins.h
-temperature_control_blender_hal\app_main.o: ../Core/Inc/main.h
 temperature_control_blender_hal\app_main.o: ./User/Int/Int_I2C1.h
 temperature_control_blender_hal\app_main.o: ../Core/Inc/i2c.h
+temperature_control_blender_hal\app_main.o: ../Core/Inc/main.h
 temperature_control_blender_hal\app_main.o: ./User/Int/Int_I2C2.h

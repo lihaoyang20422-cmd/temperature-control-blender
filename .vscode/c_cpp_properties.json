@@ -26,6 +26,7 @@
             "defines": [
                 "USE_HAL_DRIVER",
                 "STM32F103xE",
+                "COM_DEBUG_ENABLE",
                 "__CC_ARM",
                 "__arm__",
                 "__align(x)=",

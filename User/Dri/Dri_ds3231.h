@@ -20,5 +20,6 @@ typedef struct
 /* 探测 DS3231 并读取当前时间，成功返回 1。 */
 uint8_t Dri_Ds3231Init(void);
 uint8_t Dri_Ds3231ReadTime(DriDs3231Time_t *time);
+uint8_t Dri_Ds3231WriteTime(const DriDs3231Time_t *time);
 
 #endif

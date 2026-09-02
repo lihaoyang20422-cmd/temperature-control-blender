@@ -15,5 +15,5 @@ uint8_t App_MotorStartPwm(void);
 void App_MotorStop(void);
 
 /* 创建电机闭环控制任务。 */
-void App_MotorCreateTask(void);
+uint8_t App_MotorCreateTask(void);
 

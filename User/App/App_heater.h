@@ -11,5 +11,7 @@ uint8_t App_HeaterCreateTask(void);
 
 /* 由统一 HAL EXTI 回调转发；ISR 内只通知任务，不执行 PWM 或报警操作。 */
 void App_HeaterExtiCallback(uint16_t gpioPin);
+/* 由 KEY1 长按请求清除加热故障，只有故障条件恢复后才允许执行。 */
+uint8_t App_HeaterTryClearFault(void);
 
 #endif /* APP_HEATER_H */

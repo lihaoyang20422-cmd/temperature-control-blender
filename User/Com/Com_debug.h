@@ -5,8 +5,6 @@
 
 void Com_DebugPrintf(const char *format, ...);
 
-#define COM_DEBUG_ENABLE
-
 #ifdef  COM_DEBUG_ENABLE
 
 #define debug_printf(format, ...) Com_DebugPrintf("[%s:%d]" format, __FILE__, __LINE__, ##__VA_ARGS__)

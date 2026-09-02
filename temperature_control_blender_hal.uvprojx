@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F103xE</Define>
+              <Define>USE_HAL_DRIVER,STM32F103xE,COM_DEBUG_ENABLE</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;./User/App;./User/Com;./User/Dri;./User/Int;./User/Mid;./User/Mid/FreeRTOS;./User/Mid/FreeRTOS/src;./User/Mid/FreeRTOS/port;./User/Mid/FreeRTOS/inc</IncludePath>
             </VariousControls>
@@ -675,6 +675,16 @@
               <FilePath>.\User\App\App_rtc.h</FilePath>
             </File>
             <File>
+              <FileName>App_bluetooth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\App\App_bluetooth.c</FilePath>
+            </File>
+            <File>
+              <FileName>App_bluetooth.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\App\App_bluetooth.h</FilePath>
+            </File>
+            <File>
               <FileName>App_imu.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\User\App\App_imu.c</FilePath>
@@ -738,6 +748,16 @@
               <FileName>Int_SPI2.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Int\Int_SPI2.h</FilePath>
+            </File>
+            <File>
+              <FileName>Int_Bluetooth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Int\Int_Bluetooth.c</FilePath>
+            </File>
+            <File>
+              <FileName>Int_Bluetooth.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Int\Int_Bluetooth.h</FilePath>
             </File>
           </Files>
         </Group>

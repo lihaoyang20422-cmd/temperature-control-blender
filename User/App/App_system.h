@@ -47,6 +47,18 @@ typedef struct
     AppFocusItem_t Previous;
 } AppFocusState_t;
 
+/* DS3231 当前日历时间，所有字段均为十进制数值。 */
+typedef struct
+{
+    uint16_t Year;
+    uint8_t Month;
+    uint8_t Date;
+    uint8_t Day;
+    uint8_t Hours;
+    uint8_t Minutes;
+    uint8_t Seconds;
+} AppRtcTime_t;
+
 /* 显示、控制和通信任务共同使用的设备运行数据。 */
 typedef struct
 {
@@ -61,6 +73,7 @@ typedef struct
     uint32_t Uid[APP_UID_WORD_COUNT];        /* STM32 完整的 96 位芯片唯一 ID。 */
     uint32_t CurrentTime;                    /* 当前已运行时间，单位为秒，从 0 逐秒增加。 */
     uint32_t FaultFlags;                     /* 当前锁存的故障位。 */
+    AppRtcTime_t RtcTime;                    /* DS3231 当前日历时间。 */
 } AppData_t;
 
 /* 三个全局结构体共用同一把互斥锁，访问时必须先调用 App_SystemLock。 */
@@ -95,8 +108,6 @@ uint8_t App_SystemEnterFault(AppFault_t fault);
  * 周期检查两个共享状态字段；即使其他代码直接写入故障状态，也能触发安全钩子。
  * 后续建议由系统监控任务以固定周期调用，不能在中断中调用。
  */
-void App_SystemSafetyCheck(void);
-
 /*
  * 电机故障安全处理预留接口。默认实现为空，后续可在电机模块中重写该函数，
  * 用于停止电机 PWM、关闭驱动使能以及执行其他安全动作。

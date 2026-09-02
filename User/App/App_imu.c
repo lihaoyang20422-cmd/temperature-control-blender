@@ -33,6 +33,7 @@ static uint8_t s_accelValid;
 static uint8_t s_tilted;
 static uint8_t s_tiltEnterCount;
 static uint8_t s_tiltExitCount;
+static uint8_t s_tiltRecoveryReady;
 
 static uint8_t App_ImuReadAccel(AppImuAccelRaw_t *accel)
 {
@@ -117,6 +118,7 @@ static void App_ImuTask(void *argument)
         if (tilted != 0U)
         {
             s_tiltExitCount = 0U;
+            s_tiltRecoveryReady = 0U;
             if (s_tiltEnterCount < IMU_TILT_ENTER_COUNT)
             {
                 s_tiltEnterCount++;
@@ -139,9 +141,8 @@ static void App_ImuTask(void *argument)
                 }
                 if ((s_tilted != 0U) && (s_tiltExitCount >= IMU_TILT_EXIT_COUNT))
                 {
-                    s_tilted = 0U;
-                    debug_printfln("IMU tilt cleared, return to idle");
-                    (void)App_SystemClearFault(APP_FAULT_IMU_TILT);
+                    /* 故障恢复必须由 KEY1 长按确认，IMU 任务只记录“可恢复”。 */
+                    s_tiltRecoveryReady = 1U;
                 }
             }
             else
@@ -150,6 +151,29 @@ static void App_ImuTask(void *argument)
             }
         }
     }
+}
+
+uint8_t App_ImuTryClearFault(void)
+{
+    uint8_t clearResult;
+
+    if ((s_tilted == 0U) || (s_tiltRecoveryReady == 0U) ||
+        (s_accelValid == 0U) || (App_ImuIsNormal(&s_accelRaw) == 0U))
+    {
+        return 0U;
+    }
+
+    clearResult = App_SystemClearFault(APP_FAULT_IMU_TILT);
+    if (clearResult != 0U)
+    {
+        s_tilted = 0U;
+        s_tiltRecoveryReady = 0U;
+        s_tiltEnterCount = 0U;
+        s_tiltExitCount = 0U;
+        debug_printfln("IMU tilt fault cleared by KEY1");
+    }
+
+    return clearResult;
 }
 
 uint8_t App_ImuCreateTask(void)
@@ -235,6 +259,11 @@ uint8_t App_ImuReadRegisters(uint8_t startAddress, uint8_t *buffer, uint16_t siz
 uint8_t App_ImuInit(void)
 {
     uint8_t whoAmI;
+
+    s_tilted = 0U;
+    s_tiltEnterCount = 0U;
+    s_tiltExitCount = 0U;
+    s_tiltRecoveryReady = 0U;
 
     if (Bsp_Spi2Init() == 0U)
     {

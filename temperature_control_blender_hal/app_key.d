@@ -47,4 +47,6 @@ temperature_control_blender_hal\app_key.o: User\App\App_storage.h
 temperature_control_blender_hal\app_key.o: User\App\App_ui.h
 temperature_control_blender_hal\app_key.o: ./User/Mid/FreeRTOS/inc/task.h
 temperature_control_blender_hal\app_key.o: ./User/Mid/FreeRTOS/inc/list.h
+temperature_control_blender_hal\app_key.o: User\App\App_imu.h
+temperature_control_blender_hal\app_key.o: User\App\App_heater.h
 temperature_control_blender_hal\app_key.o: ./User/Com/Com_debug.h

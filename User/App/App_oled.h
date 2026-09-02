@@ -7,6 +7,9 @@
 /* 初始化 SSD1315，并显示启动画面。 */
 uint8_t App_OledInit(void);
 
+/* 绘制开机首页：品牌、DS3231 日期时间和 KEY4 进入设置页提示。 */
+uint8_t App_OledUpdateHome(const AppData_t *data);
+
 /* 根据共享状态快照刷新 OLED 五行界面，调用者不得持有系统状态互斥锁。 */
 uint8_t App_OledUpdate(const AppData_t *data, const AppFocusState_t *focus);
 
