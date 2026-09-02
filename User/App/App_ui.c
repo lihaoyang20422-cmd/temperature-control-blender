@@ -3,9 +3,50 @@
 #include "App_oled.h"
 
 #define APP_UI_UPDATE_PERIOD_MS 100U
+#define APP_UI_SPEED_FILTER_SCALE 256L
+#define APP_UI_SPEED_FILTER_DIVISOR 4L
 
 static TaskHandle_t s_uiTaskHandle = NULL;
 static volatile AppUiPage_t s_uiPage = APP_UI_PAGE_HOME;
+
+static int16_t App_UiFilterSpeedForDisplay(int16_t currentSpeed,
+                                           AppMotorStatusValue_t status)
+{
+    static int32_t filteredSpeedScaled;
+    static uint8_t filterInitialized;
+    int32_t currentSpeedScaled;
+
+    /*
+     * 显示滤波仅作用于 UI 任务持有的状态快照，不回写 g_appData，
+     * 因而不会给电机 PID 引入额外延迟。IDLE 和 FAULT 必须立即显示 0，
+     * 同时清除滤波历史，保证下一次启动不会沿用上一次运行的转速。
+     */
+    if ((status != APP_MOTOR_STATUS_RUNNING) || (currentSpeed <= 0))
+    {
+        filteredSpeedScaled = 0;
+        filterInitialized = 0U;
+        return 0;
+    }
+
+    currentSpeedScaled = (int32_t)currentSpeed * APP_UI_SPEED_FILTER_SCALE;
+    if (filterInitialized == 0U)
+    {
+        /* 首个有效转速直接作为初值，避免 OLED 从 0 缓慢爬升。 */
+        filteredSpeedScaled = currentSpeedScaled;
+        filterInitialized = 1U;
+    }
+    else
+    {
+        /* 一阶低通：新显示值 = 旧值 + (当前值 - 旧值) / 4。 */
+        filteredSpeedScaled +=
+            (currentSpeedScaled - filteredSpeedScaled) /
+            APP_UI_SPEED_FILTER_DIVISOR;
+    }
+
+    return (int16_t)((filteredSpeedScaled +
+                      (APP_UI_SPEED_FILTER_SCALE / 2L)) /
+                     APP_UI_SPEED_FILTER_SCALE);
+}
 
 static uint8_t App_UiHomeChanged(const AppData_t *currentData,
                                  const AppData_t *displayedData)
@@ -102,6 +143,11 @@ void App_UiTask(void *argument)
             dataSnapshot = g_appData;
             focusSnapshot = g_focusState;
             App_SystemUnlock();
+
+            /* 解锁后只平滑 OLED 使用的快照，PID 继续使用全局状态中的真实转速。 */
+            dataSnapshot.CurrentSpeed =
+                App_UiFilterSpeedForDisplay(dataSnapshot.CurrentSpeed,
+                                            dataSnapshot.CurrentStatus);
             currentPage = s_uiPage;
 
             /* 100 ms 周期只负责检查状态，显示内容不变时不占用 I2C1 总线。 */

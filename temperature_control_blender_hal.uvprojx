@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F103xE,COM_DEBUG_ENABLE</Define>
+              <Define>USE_HAL_DRIVER,STM32F103xE,COM_VOFA_ENABLE</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;./User/App;./User/Com;./User/Dri;./User/Int;./User/Mid;./User/Mid/FreeRTOS;./User/Mid/FreeRTOS/src;./User/Mid/FreeRTOS/port;./User/Mid/FreeRTOS/inc</IncludePath>
             </VariousControls>

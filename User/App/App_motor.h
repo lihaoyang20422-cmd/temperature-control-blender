@@ -17,3 +17,9 @@ void App_MotorStop(void);
 /* 创建电机闭环控制任务。 */
 uint8_t App_MotorCreateTask(void);
 
+/* 创建临时编码器计数验证任务；测试模式下不启动电机PWM。 */
+uint8_t App_MotorCreateEncoderTestTask(void);
+
+/* 获取从编码器测试任务启动后累计的TIM3计数，反向旋转时可能为负值。 */
+int32_t App_MotorGetEncoderTestTotalCount(void);
+

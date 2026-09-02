@@ -9,10 +9,19 @@
 
 /* 电机控制周期、编码器参数和前馈参数。 */
 #define APP_MOTOR_CONTROL_PERIOD_MS       50U
+#define APP_MOTOR_VOFA_PERIOD_MS          100U
 #define APP_MOTOR_DEBUG_PERIOD_MS         1000U
-#define APP_MOTOR_ENCODER_COUNTS_PER_REV  12.5f
+#define APP_MOTOR_ENCODER_TEST_PERIOD_MS  100U
+#define APP_MOTOR_ENCODER_TEST_STACK_SIZE 128U
+#define APP_MOTOR_ENCODER_COUNTS_PER_REV  8.0f
 #define APP_MOTOR_SPEED_AVG_SAMPLES       8U
-#define APP_MOTOR_FF_DUTY_PER_RPM         0.00143f
+/*
+ * 电机存在明显的低占空比死区，前馈不能使用经过原点的单斜率模型。
+ * 根据实测约 140 RPM/38% 和 500 RPM/48% 两个工作点，拟合得到：
+ * duty = 0.34 + 0.00028 * targetRpm。PID 仅修正负载扰动和模型余差。
+ */
+#define APP_MOTOR_FF_BASE_DUTY            0.34f
+#define APP_MOTOR_FF_DUTY_PER_RPM         0.00028f
 #define APP_MOTOR_PID_KP                  8.0f
 #define APP_MOTOR_PID_KI                  0.8f
 #define APP_MOTOR_PID_KD                  0.0f
@@ -22,6 +31,9 @@
 #define APP_MOTOR_PID_MAX_CORRECTION      0.10f  /* PID 修正最多占 10%。 */
 #define APP_MOTOR_PWM_MAX_DUTY            1.00f  /* 前馈与 PID 合计允许达到 100%。 */
 #define APP_MOTOR_PWM_START_DUTY          0.08f
+#define APP_MOTOR_STARTUP_BOOST_DUTY      0.70f
+#define APP_MOTOR_STARTUP_BOOST_TIME_MS   300U
+#define APP_MOTOR_STARTUP_EXIT_RATIO      0.80f
 
 typedef struct
 {
@@ -32,10 +44,17 @@ typedef struct
 static AppMotorPid_t s_motorPid;
 static int32_t s_lastEncoderCount;
 static int32_t s_speedAccumCount;
+static int32_t s_speedDeltaWindow[APP_MOTOR_SPEED_AVG_SAMPLES];
 static uint8_t s_speedSampleCount;
+static uint8_t s_speedSampleIndex;
 static float s_filteredRpm;
 static float s_lastDuty;
 static uint8_t s_pwmStarted;
+static uint16_t s_startupBoostRemainingMs;
+/* 编码器测试开始后累计的TIM3计数，便于通过调试器或VOFA直接观察。 */
+static volatile int32_t s_encoderTestTotalCount;
+
+static void App_MotorEncoderTestTask(void *argument);
 
 static int32_t App_MotorReadEncoder(void)
 {
@@ -44,71 +63,131 @@ static int32_t App_MotorReadEncoder(void)
 
 static void App_MotorResetController(void)
 {
+    uint8_t index;
+
     s_motorPid.integral = 0.0f;
     s_motorPid.previousError = 0.0f;
     s_speedAccumCount = 0;
     s_speedSampleCount = 0U;
+    s_speedSampleIndex = 0U;
+    for (index = 0U; index < APP_MOTOR_SPEED_AVG_SAMPLES; index++)
+    {
+        s_speedDeltaWindow[index] = 0;
+    }
     s_filteredRpm = 0.0f;
     s_lastDuty = 0.0f;
+    s_startupBoostRemainingMs = 0U;
 }
 
 static float App_MotorUpdateRpm(int32_t deltaCount)
 {
     float sampleMinutes;
 
-    s_speedAccumCount += deltaCount;
-    s_speedSampleCount++;
-
-    if (s_speedSampleCount >= APP_MOTOR_SPEED_AVG_SAMPLES)
+    /*
+     * 使用 8 点滑动窗口累计编码器增量。窗口长度仍为 400 ms，保留低速
+     * 测量分辨率，但每 50 ms 都会得到一个新转速，避免原实现每 400 ms
+     * 才更新一次反馈导致 PID 响应迟缓。
+     */
+    if (s_speedSampleCount < APP_MOTOR_SPEED_AVG_SAMPLES)
     {
-        sampleMinutes = ((float)APP_MOTOR_CONTROL_PERIOD_MS *
-                         (float)APP_MOTOR_SPEED_AVG_SAMPLES) / 60000.0f;
-        s_filteredRpm = ((float)s_speedAccumCount /
-                         APP_MOTOR_ENCODER_COUNTS_PER_REV) / sampleMinutes;
-        if (s_filteredRpm < 0.0f)
-        {
-            s_filteredRpm = -s_filteredRpm;
-        }
-        s_speedAccumCount = 0;
-        s_speedSampleCount = 0U;
+        s_speedSampleCount++;
+    }
+    else
+    {
+        s_speedAccumCount -= s_speedDeltaWindow[s_speedSampleIndex];
+    }
+
+    s_speedDeltaWindow[s_speedSampleIndex] = deltaCount;
+    s_speedAccumCount += deltaCount;
+    s_speedSampleIndex++;
+    if (s_speedSampleIndex >= APP_MOTOR_SPEED_AVG_SAMPLES)
+    {
+        s_speedSampleIndex = 0U;
+    }
+
+    sampleMinutes = ((float)APP_MOTOR_CONTROL_PERIOD_MS *
+                     (float)s_speedSampleCount) / 60000.0f;
+    s_filteredRpm = ((float)s_speedAccumCount /
+                     APP_MOTOR_ENCODER_COUNTS_PER_REV) / sampleMinutes;
+    if (s_filteredRpm < 0.0f)
+    {
+        s_filteredRpm = -s_filteredRpm;
     }
 
     return s_filteredRpm;
+}
+
+static float App_MotorFeedForwardDuty(float targetRpm)
+{
+    float duty;
+
+    /* 目标为零时必须保持零输出，不能把基础占空比直接送到电机。 */
+    if (targetRpm <= 0.0f)
+    {
+        return 0.0f;
+    }
+
+    duty = APP_MOTOR_FF_BASE_DUTY +
+           targetRpm * APP_MOTOR_FF_DUTY_PER_RPM;
+    if (duty > APP_MOTOR_FF_MAX_DUTY)
+    {
+        duty = APP_MOTOR_FF_MAX_DUTY;
+    }
+
+    return duty;
 }
 
 static float App_MotorPidStep(float targetRpm, float currentRpm)
 {
     float error;
     float derivative;
+    float integralCandidate;
+    float rawCorrection;
     float correction;
     float output;
 
     error = targetRpm - currentRpm;
-    s_motorPid.integral += error * ((float)APP_MOTOR_CONTROL_PERIOD_MS / 1000.0f);
-    if (s_motorPid.integral > APP_MOTOR_PID_INTEGRAL_LIMIT)
+    integralCandidate = s_motorPid.integral +
+                        error * ((float)APP_MOTOR_CONTROL_PERIOD_MS / 1000.0f);
+    if (integralCandidate > APP_MOTOR_PID_INTEGRAL_LIMIT)
     {
-        s_motorPid.integral = APP_MOTOR_PID_INTEGRAL_LIMIT;
+        integralCandidate = APP_MOTOR_PID_INTEGRAL_LIMIT;
     }
-    else if (s_motorPid.integral < -APP_MOTOR_PID_INTEGRAL_LIMIT)
+    else if (integralCandidate < -APP_MOTOR_PID_INTEGRAL_LIMIT)
     {
-        s_motorPid.integral = -APP_MOTOR_PID_INTEGRAL_LIMIT;
+        integralCandidate = -APP_MOTOR_PID_INTEGRAL_LIMIT;
     }
 
     derivative = (error - s_motorPid.previousError) /
                  ((float)APP_MOTOR_CONTROL_PERIOD_MS / 1000.0f);
-    correction = (APP_MOTOR_PID_KP * error +
-                  APP_MOTOR_PID_KI * s_motorPid.integral +
-                  APP_MOTOR_PID_KD * derivative) / APP_MOTOR_PID_OUTPUT_SCALE;
+    rawCorrection = (APP_MOTOR_PID_KP * error +
+                     APP_MOTOR_PID_KI * integralCandidate +
+                     APP_MOTOR_PID_KD * derivative) /
+                    APP_MOTOR_PID_OUTPUT_SCALE;
+
+    /*
+     * 当 PID 已经达到修正上限且误差还在推动积分继续增大时，冻结积分。
+     * 这样可避免长时间饱和后产生积分堆积，导致转速回到目标附近仍迟迟降不下来。
+     */
+    if (((rawCorrection > APP_MOTOR_PID_MAX_CORRECTION) && (error > 0.0f)) ||
+        ((rawCorrection < -APP_MOTOR_PID_MAX_CORRECTION) && (error < 0.0f)))
+    {
+        rawCorrection = (APP_MOTOR_PID_KP * error +
+                         APP_MOTOR_PID_KI * s_motorPid.integral +
+                         APP_MOTOR_PID_KD * derivative) /
+                        APP_MOTOR_PID_OUTPUT_SCALE;
+    }
+    else
+    {
+        s_motorPid.integral = integralCandidate;
+    }
+    correction = rawCorrection;
     /*
      * 前馈负责主要输出，按标定曲线最多提供 90% 占空比；PID 只修正
      * 负载扰动和模型误差，修正量限制为 +/-10%，避免积分或突发误差
      * 把输出直接推到不可控的满量程。
      */
-    output = targetRpm * APP_MOTOR_FF_DUTY_PER_RPM;
-    if (output > APP_MOTOR_FF_MAX_DUTY)
-    {
-        output = APP_MOTOR_FF_MAX_DUTY;
-    }
+    output = App_MotorFeedForwardDuty(targetRpm);
 
     if (correction > APP_MOTOR_PID_MAX_CORRECTION)
     {
@@ -214,16 +293,30 @@ static void App_MotorTask(void *argument)
     float duty;
     int16_t speedToStore;
     AppMotorStatusValue_t status;
+    TickType_t lastControlTick;
+#if defined(COM_VOFA_ENABLE)
+    TickType_t lastVofaTick;
+#elif defined(COM_DEBUG_ENABLE)
     TickType_t lastDebugTick;
+#endif
 
     (void)argument;
     encoderCount = App_MotorReadEncoder();
     s_lastEncoderCount = encoderCount;
     App_MotorResetController();
-    lastDebugTick = xTaskGetTickCount();
+    lastControlTick = xTaskGetTickCount();
+#if defined(COM_VOFA_ENABLE)
+    lastVofaTick = lastControlTick;
+#elif defined(COM_DEBUG_ENABLE)
+    lastDebugTick = lastControlTick;
+#endif
 
     for (;;)
     {
+        /* 固定 50 ms 控制节拍，保证编码器转速换算和 PID 的 dt 与实际周期一致。 */
+        vTaskDelayUntil(&lastControlTick,
+                        pdMS_TO_TICKS(APP_MOTOR_CONTROL_PERIOD_MS));
+
         status = APP_MOTOR_STATUS_IDLE;
         targetRpm = 0.0f;
         if (App_SystemLock(portMAX_DELAY) != 0U)
@@ -240,7 +333,41 @@ static void App_MotorTask(void *argument)
 
         if ((status == APP_MOTOR_STATUS_RUNNING) && (targetRpm > 0.0f))
         {
-            duty = App_MotorPidStep(targetRpm, currentRpm);
+            /*
+             * 电机从静止启动时短暂提供 70% 助推，克服静摩擦；转速达到目标
+             * 的 80% 或最长 300 ms 后立即退出助推，再交给前馈 + PID 控制。
+             */
+            if (s_pwmStarted == 0U)
+            {
+                s_startupBoostRemainingMs = APP_MOTOR_STARTUP_BOOST_TIME_MS;
+            }
+
+            if ((s_startupBoostRemainingMs > 0U) &&
+                (currentRpm < (targetRpm * APP_MOTOR_STARTUP_EXIT_RATIO)))
+            {
+                duty = App_MotorFeedForwardDuty(targetRpm);
+                if (duty < APP_MOTOR_STARTUP_BOOST_DUTY)
+                {
+                    duty = APP_MOTOR_STARTUP_BOOST_DUTY;
+                }
+                s_motorPid.integral = 0.0f;
+                s_motorPid.previousError = targetRpm - currentRpm;
+
+                if (s_startupBoostRemainingMs > APP_MOTOR_CONTROL_PERIOD_MS)
+                {
+                    s_startupBoostRemainingMs -= APP_MOTOR_CONTROL_PERIOD_MS;
+                }
+                else
+                {
+                    s_startupBoostRemainingMs = 0U;
+                }
+            }
+            else
+            {
+                s_startupBoostRemainingMs = 0U;
+                duty = App_MotorPidStep(targetRpm, currentRpm);
+            }
+
             if (App_MotorApplyDutyIfRunning(duty) == 0U)
             {
                 App_MotorResetController();
@@ -260,6 +387,23 @@ static void App_MotorTask(void *argument)
         }
         App_MotorUpdateCurrentSpeed(speedToStore);
 
+#ifdef COM_VOFA_ENABLE
+        if ((xTaskGetTickCount() - lastVofaTick) >=
+            pdMS_TO_TICKS(APP_MOTOR_VOFA_PERIOD_MS))
+        {
+            lastVofaTick = xTaskGetTickCount();
+
+            /*
+             * FireWater 四通道顺序：目标转速、当前转速、PWM 占空比、编码器增量。
+             * 空闲状态也持续发送零输出，便于在 VOFA 中观察完整的启动和停止过程。
+             */
+            Com_VofaSendMotorFrame((int16_t)(targetRpm + 0.5f),
+                                   speedToStore,
+                                   (uint16_t)(s_lastDuty * 100.0f),
+                                   deltaCount);
+        }
+#elif defined(COM_DEBUG_ENABLE)
+        /* 恢复普通调试模式时，保留原有的人类可读电机日志。 */
         if ((status == APP_MOTOR_STATUS_RUNNING) &&
             ((xTaskGetTickCount() - lastDebugTick) >=
              pdMS_TO_TICKS(APP_MOTOR_DEBUG_PERIOD_MS)))
@@ -271,8 +415,40 @@ static void App_MotorTask(void *argument)
                             (unsigned int)(s_lastDuty * 100.0f),
                             (long)deltaCount);
         }
+#endif
 
-        vTaskDelay(pdMS_TO_TICKS(APP_MOTOR_CONTROL_PERIOD_MS));
+    }
+}
+
+static void App_MotorEncoderTestTask(void *argument)
+{
+    int32_t previousCount;
+    int32_t currentCount;
+    int32_t deltaCount;
+    TickType_t lastWakeTime;
+
+    (void)argument;
+
+    /*
+     * 测试任务只读取TIM3编码器计数，不启动TIM4 PWM，也不修改系统运行状态。
+     * 每次差值先转换为16位有符号数，可正确处理TIM3在0与65535之间的回绕。
+     */
+    App_MotorStop();
+    previousCount = App_MotorReadEncoder();
+    s_encoderTestTotalCount = 0;
+    lastWakeTime = xTaskGetTickCount();
+
+    for (;;)
+    {
+        currentCount = App_MotorReadEncoder();
+        deltaCount = (int16_t)(currentCount - previousCount);
+        previousCount = currentCount;
+        s_encoderTestTotalCount += deltaCount;
+
+        /* FireWater第四通道持续输出累计计数，前三个通道固定为0。 */
+        Com_VofaSendEncoderTestFrame(s_encoderTestTotalCount);
+        vTaskDelayUntil(&lastWakeTime,
+                        pdMS_TO_TICKS(APP_MOTOR_ENCODER_TEST_PERIOD_MS));
     }
 }
 
@@ -327,4 +503,16 @@ uint8_t App_MotorCreateTask(void)
 {
     return (xTaskCreate(App_MotorTask, "Motor", 320U, NULL,
                         tskIDLE_PRIORITY + 2U, NULL) == pdPASS) ? 1U : 0U;
+}
+
+uint8_t App_MotorCreateEncoderTestTask(void)
+{
+    return (xTaskCreate(App_MotorEncoderTestTask, "EncoderTest",
+                        APP_MOTOR_ENCODER_TEST_STACK_SIZE, NULL,
+                        tskIDLE_PRIORITY + 1U, NULL) == pdPASS) ? 1U : 0U;
+}
+
+int32_t App_MotorGetEncoderTestTotalCount(void)
+{
+    return s_encoderTestTotalCount;
 }
