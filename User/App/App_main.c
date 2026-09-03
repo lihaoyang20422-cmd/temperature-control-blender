@@ -186,9 +186,8 @@ void App_main(void)
     }
 
     /* 根据条件编译选择临时编码器验证任务或正式电机闭环任务。 */
-#ifdef APP_MOTOR_ENCODER_TEST_ENABLE
-    /* 编码器验证期间只创建累计计数任务，避免与PID控制任务同时读取编码器。 */
 #if (APP_MOTOR_ENCODER_TEST_ENABLE != 0U)
+    /* 编码器验证期间只创建累计计数任务，避免与PID控制任务同时读取编码器。 */
     if (App_MotorCreateEncoderTestTask() == 0U)
     {
         debug_printfln("Encoder test task create failed");
@@ -196,7 +195,6 @@ void App_main(void)
         {
         }
     }
-#endif
 #else
     if (App_MotorCreateTask() == 0U)
     {
