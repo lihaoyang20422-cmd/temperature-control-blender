@@ -105,10 +105,6 @@ uint8_t App_SystemClearFault(AppFault_t fault);
 uint8_t App_SystemEnterFault(AppFault_t fault);
 
 /*
- * 周期检查两个共享状态字段；即使其他代码直接写入故障状态，也能触发安全钩子。
- * 后续建议由系统监控任务以固定周期调用，不能在中断中调用。
- */
-/*
  * 电机故障安全处理预留接口。默认实现为空，后续可在电机模块中重写该函数，
  * 用于停止电机 PWM、关闭驱动使能以及执行其他安全动作。
  */

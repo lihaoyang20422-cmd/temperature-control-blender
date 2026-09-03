@@ -77,12 +77,3 @@ void Com_VofaSendMotorFrame(int16_t targetRpm, int16_t currentRpm,
     (void)encoderDelta;
 #endif
 }
-
-void Com_VofaSendEncoderTestFrame(int32_t totalEncoderCount)
-{
-    /*
-     * 测试时固定前三个通道为0，只让第四通道显示累计编码器计数。
-     * 保持四通道帧宽不变，避免VOFA在测试过程中重新识别通道数量。
-     */
-    Com_VofaSendMotorFrame(0, 0, 0U, totalEncoderCount);
-}

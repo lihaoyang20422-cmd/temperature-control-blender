@@ -14,9 +14,6 @@ void Com_DebugPrintf(const char *format, ...);
 void Com_VofaSendMotorFrame(int16_t targetRpm, int16_t currentRpm,
                             uint16_t dutyPercent, int32_t encoderDelta);
 
-/* 编码器计数验证模式复用第四通道输出从测试开始累计的TIM3计数。 */
-void Com_VofaSendEncoderTestFrame(int32_t totalEncoderCount);
-
 #ifdef  COM_DEBUG_ENABLE
 
 #define debug_printf(format, ...) Com_DebugPrintf("[%s:%d]" format, __FILE__, __LINE__, ##__VA_ARGS__)

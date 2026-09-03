@@ -8,6 +8,10 @@
 #include "App_heater.h"
 #include "Com_debug.h"
 
+#define APP_KEY_TARGET_TEMP_MAX       150
+#define APP_KEY_TARGET_SPEED_MAX      3000
+#define APP_KEY_TARGET_TIME_MAX       7200U
+
 static void App_KeyChangeFocus(void);
 static void App_KeyAdjustTarget(int16_t delta);
 static void App_KeyToggleRunIdle(void);
@@ -139,6 +143,7 @@ static void App_KeyAdjustTarget(int16_t delta)
 {
     int32_t value;
     uint32_t step;
+    uint8_t requestIdle = 0U;
 
     if (App_SystemLock(portMAX_DELAY) == 0U)
     {
@@ -153,9 +158,9 @@ static void App_KeyAdjustTarget(int16_t delta)
         {
             value = 0;
         }
-        else if (value > 32767)
+        else if (value > APP_KEY_TARGET_TEMP_MAX)
         {
-            value = 32767;
+            value = APP_KEY_TARGET_TEMP_MAX;
         }
         g_appData.TargetTemperature = (int16_t)value;
     }
@@ -166,9 +171,9 @@ static void App_KeyAdjustTarget(int16_t delta)
         {
             value = 0;
         }
-        else if (value > 32767)
+        else if (value > APP_KEY_TARGET_SPEED_MAX)
         {
-            value = 32767;
+            value = APP_KEY_TARGET_SPEED_MAX;
         }
         g_appData.TargetSpeed = (int16_t)value;
     }
@@ -189,18 +194,35 @@ static void App_KeyAdjustTarget(int16_t delta)
         else
         {
             step = (uint32_t)delta;
-            if (g_appData.TargetTime <= (0xFFFFFFFFUL - step))
+            if (g_appData.TargetTime <= (APP_KEY_TARGET_TIME_MAX - step))
             {
                 g_appData.TargetTime += step;
             }
             else
             {
-                g_appData.TargetTime = 0xFFFFFFFFUL;
+                g_appData.TargetTime = APP_KEY_TARGET_TIME_MAX;
             }
+        }
+
+        /* 修改设定时间后立即重算剩余时间，避免显示值和倒计时状态不一致。 */
+        if (g_appData.CurrentTime > g_appData.TargetTime)
+        {
+            g_appData.CurrentTime = g_appData.TargetTime;
+        }
+        g_appData.RemainingTime = g_appData.TargetTime - g_appData.CurrentTime;
+        if ((g_appData.CurrentStatus == APP_MOTOR_STATUS_RUNNING) &&
+            (g_appData.RemainingTime == 0U))
+        {
+            requestIdle = 1U;
         }
     }
 
     App_SystemUnlock();
+
+    if (requestIdle != 0U)
+    {
+        (void)App_SystemSetMotorStatus(APP_MOTOR_STATUS_IDLE);
+    }
 
     /* 参数变化后重启 5 秒防抖计时，实际 EEPROM 写入由存储任务完成。 */
     App_StorageRequestSave();
@@ -221,13 +243,11 @@ static void App_KeyToggleRunIdle(void)
         if (g_appData.CurrentStatus == APP_MOTOR_STATUS_RUNNING)
         {
             nextStatus = APP_MOTOR_STATUS_IDLE;
-            /* 手动停止后清零本次运行计时，下次启动重新从 0 秒开始。 */
             /* 短按停止只暂停本次运行，保留已运行时间和剩余时间，便于再次继续。 */
         }
         else if (g_appData.TargetTime != 0U)
         {
             nextStatus = APP_MOTOR_STATUS_RUNNING;
-            /* 每次启动都从 0 秒开始累计，同时装载倒计时初值。 */
             /* 首次启动或上一轮已完成时从 0 开始；暂停恢复时保留原进度。 */
             if ((g_appData.RemainingTime == 0U) ||
                 (g_appData.CurrentTime >= g_appData.TargetTime))
@@ -259,6 +279,9 @@ static void App_KeyClearTargets(void)
     /* 长按 KEY4 在非故障状态下清零目标参数并回到 IDLE。 */
     if (g_appData.CurrentStatus != APP_MOTOR_STATUS_FAULT)
     {
+        g_appData.TargetTemperature = 0;
+        g_appData.TargetSpeed = 0;
+        g_appData.TargetTime = 0U;
         g_appData.CurrentTime = 0U;
         g_appData.RemainingTime = 0U;
         changeToIdle = 1U;

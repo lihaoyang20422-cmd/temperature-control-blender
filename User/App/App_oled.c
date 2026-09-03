@@ -246,7 +246,8 @@ uint8_t App_OledUpdateHome(const AppData_t *data)
     (void)memset(s_oledHandle.gram, 0, sizeof(s_oledHandle.gram));
 
     /* 当前面板的 COM 扫描方向使逻辑 Y 坐标与物理上下方向相反。 */
-    if (App_OledWriteLine(44U, 48U, "Ayang", SSD1315_FONT_16) == 0U)
+    /* 首页四行纵向排列，避免品牌、时间和按键提示互相覆盖。 */
+    if (App_OledWriteLine(44U, 0U, "Ayang", SSD1315_FONT_16) == 0U)
     {
         return 0U;
     }
@@ -255,7 +256,7 @@ uint8_t App_OledUpdateHome(const AppData_t *data)
                    (unsigned int)data->RtcTime.Year,
                    (unsigned int)data->RtcTime.Month,
                    (unsigned int)data->RtcTime.Date);
-    if (App_OledWriteLine(34U, 28U, line, SSD1315_FONT_12) == 0U)
+    if (App_OledWriteLine(34U, 18U, line, SSD1315_FONT_12) == 0U)
     {
         return 0U;
     }
@@ -264,8 +265,8 @@ uint8_t App_OledUpdateHome(const AppData_t *data)
                    (unsigned int)data->RtcTime.Hours,
                    (unsigned int)data->RtcTime.Minutes,
                    (unsigned int)data->RtcTime.Seconds);
-    if ((App_OledWriteLine(40U, 16U, line, SSD1315_FONT_12) == 0U) ||
-        (App_OledWriteLine(40U, 48U, "KEY4:SET", SSD1315_FONT_12) == 0U))
+    if ((App_OledWriteLine(40U, 32U, line, SSD1315_FONT_12) == 0U) ||
+        (App_OledWriteLine(40U, 50U, "KEY4:SET", SSD1315_FONT_12) == 0U))
     {
         return 0U;
     }

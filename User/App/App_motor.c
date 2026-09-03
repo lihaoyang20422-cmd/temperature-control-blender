@@ -11,11 +11,10 @@
 #define APP_MOTOR_CONTROL_PERIOD_MS       50U
 #define APP_MOTOR_VOFA_PERIOD_MS          100U
 #define APP_MOTOR_DEBUG_PERIOD_MS         1000U
-#define APP_MOTOR_ENCODER_TEST_PERIOD_MS  100U
 #define APP_MOTOR_LOG_ENABLE              1U
-#define APP_MOTOR_ENCODER_TEST_STACK_SIZE 128U
 #define APP_MOTOR_ENCODER_COUNTS_PER_REV  8.0f
 #define APP_MOTOR_SPEED_AVG_SAMPLES       8U
+#define APP_MOTOR_STOP_SPEED_TIMEOUT_MS   500U
 /*
  * 电机存在明显的低占空比死区，前馈不能使用经过原点的单斜率模型。
  * 根据实测约 140 RPM/38% 和 500 RPM/48% 两个工作点，拟合得到：
@@ -52,22 +51,25 @@ static float s_filteredRpm;
 static float s_lastDuty;
 static uint8_t s_pwmStarted;
 static uint16_t s_startupBoostRemainingMs;
-/* 编码器测试开始后累计的TIM3计数，便于通过调试器或VOFA直接观察。 */
-static volatile int32_t s_encoderTestTotalCount;
-
-static void App_MotorEncoderTestTask(void *argument);
+/* 停止后仍保留编码器速度显示，连续无脉冲达到超时才清零。 */
+static uint16_t s_stopNoPulseElapsedMs;
 
 static int32_t App_MotorReadEncoder(void)
 {
     return (int32_t)__HAL_TIM_GET_COUNTER(&htim3);
 }
 
-static void App_MotorResetController(void)
+static void App_MotorResetPid(void)
+{
+    s_motorPid.integral = 0.0f;
+    s_motorPid.previousError = 0.0f;
+    s_startupBoostRemainingMs = 0U;
+}
+
+static void App_MotorResetSpeedEstimator(void)
 {
     uint8_t index;
 
-    s_motorPid.integral = 0.0f;
-    s_motorPid.previousError = 0.0f;
     s_speedAccumCount = 0;
     s_speedSampleCount = 0U;
     s_speedSampleIndex = 0U;
@@ -76,8 +78,14 @@ static void App_MotorResetController(void)
         s_speedDeltaWindow[index] = 0;
     }
     s_filteredRpm = 0.0f;
+}
+
+static void App_MotorResetController(void)
+{
+    App_MotorResetPid();
+    App_MotorResetSpeedEstimator();
     s_lastDuty = 0.0f;
-    s_startupBoostRemainingMs = 0U;
+    s_stopNoPulseElapsedMs = 0U;
 }
 
 static float App_MotorUpdateRpm(int32_t deltaCount)
@@ -256,7 +264,9 @@ static uint8_t App_MotorApplyDutyIfRunning(float duty)
     /* 锁内再次确认状态，避免状态切换后仍输出旧的 PWM。 */
     if (App_SystemLock(portMAX_DELAY) != 0U)
     {
+        /* 最终输出闸门同时检查运行状态、目标转速和全部故障位。 */
         if ((g_appData.CurrentStatus == APP_MOTOR_STATUS_RUNNING) &&
+            (g_appData.FaultFlags == APP_FAULT_NONE) &&
             (g_appData.TargetSpeed > 0))
         {
             App_MotorApplyDuty(duty);
@@ -272,7 +282,8 @@ static void App_MotorUpdateCurrentSpeed(int16_t speed)
 {
     if (App_SystemLock(portMAX_DELAY) != 0U)
     {
-        if (g_appData.CurrentStatus == APP_MOTOR_STATUS_RUNNING)
+        /* 故障状态立即归零；IDLE 状态允许发布电机自然减速期间的实测转速。 */
+        if (g_appData.CurrentStatus != APP_MOTOR_STATUS_FAULT)
         {
             g_appData.CurrentSpeed = speed;
         }
@@ -339,6 +350,7 @@ static void App_MotorTask(void *argument)
 
         if ((status == APP_MOTOR_STATUS_RUNNING) && (targetRpm > 0.0f))
         {
+            s_stopNoPulseElapsedMs = 0U;
             /*
              * 电机从静止启动时短暂提供 70% 助推，克服静摩擦；转速达到目标
              * 的 80% 或最长 300 ms 后立即退出助推，再交给前馈 + PID 控制。
@@ -376,18 +388,50 @@ static void App_MotorTask(void *argument)
 
             if (App_MotorApplyDutyIfRunning(duty) == 0U)
             {
-                App_MotorResetController();
+                App_MotorResetPid();
                 App_MotorStop();
             }
         }
         else
         {
-            App_MotorResetController();
+            /* 停止时只复位 PID，不能清掉速度估算器，便于观察机械减速过程。 */
+            App_MotorResetPid();
             App_MotorStop();
+            if (status == APP_MOTOR_STATUS_FAULT)
+            {
+                /* 故障状态要求速度立即清零，不保留减速显示。 */
+                App_MotorResetSpeedEstimator();
+                s_stopNoPulseElapsedMs = APP_MOTOR_STOP_SPEED_TIMEOUT_MS;
+            }
+            else if (targetRpm == 0.0f)
+            {
+                /* 目标被清零时不再显示旧的转速。 */
+                App_MotorResetSpeedEstimator();
+                s_stopNoPulseElapsedMs = APP_MOTOR_STOP_SPEED_TIMEOUT_MS;
+            }
+            else if (deltaCount == 0)
+            {
+                if (s_stopNoPulseElapsedMs <=
+                    (APP_MOTOR_STOP_SPEED_TIMEOUT_MS - APP_MOTOR_CONTROL_PERIOD_MS))
+                {
+                    s_stopNoPulseElapsedMs += APP_MOTOR_CONTROL_PERIOD_MS;
+                }
+                else
+                {
+                    s_stopNoPulseElapsedMs = APP_MOTOR_STOP_SPEED_TIMEOUT_MS;
+                }
+            }
+            else
+            {
+                /* 停止后仍检测到脉冲，说明转子还在转动，重新开始等待无脉冲超时。 */
+                s_stopNoPulseElapsedMs = 0U;
+            }
         }
 
         speedToStore = (int16_t)(currentRpm + 0.5f);
-        if ((status != APP_MOTOR_STATUS_RUNNING) || (targetRpm <= 0.0f))
+        if ((status == APP_MOTOR_STATUS_FAULT) ||
+            (targetRpm <= 0.0f) ||
+            (s_stopNoPulseElapsedMs >= APP_MOTOR_STOP_SPEED_TIMEOUT_MS))
         {
             speedToStore = 0;
         }
@@ -426,38 +470,6 @@ static void App_MotorTask(void *argument)
     }
 }
 
-static void App_MotorEncoderTestTask(void *argument)
-{
-    int32_t previousCount;
-    int32_t currentCount;
-    int32_t deltaCount;
-    TickType_t lastWakeTime;
-
-    (void)argument;
-
-    /*
-     * 测试任务只读取TIM3编码器计数，不启动TIM4 PWM，也不修改系统运行状态。
-     * 每次差值先转换为16位有符号数，可正确处理TIM3在0与65535之间的回绕。
-     */
-    App_MotorStop();
-    previousCount = App_MotorReadEncoder();
-    s_encoderTestTotalCount = 0;
-    lastWakeTime = xTaskGetTickCount();
-
-    for (;;)
-    {
-        currentCount = App_MotorReadEncoder();
-        deltaCount = (int16_t)(currentCount - previousCount);
-        previousCount = currentCount;
-        s_encoderTestTotalCount += deltaCount;
-
-        /* FireWater第四通道持续输出累计计数，前三个通道固定为0。 */
-        Com_VofaSendEncoderTestFrame(s_encoderTestTotalCount);
-        vTaskDelayUntil(&lastWakeTime,
-                        pdMS_TO_TICKS(APP_MOTOR_ENCODER_TEST_PERIOD_MS));
-    }
-}
-
 uint8_t App_MotorInit(void)
 {
     if (HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL) != HAL_OK)
@@ -470,29 +482,6 @@ uint8_t App_MotorInit(void)
     s_pwmStarted = 0U;
     App_MotorResetController();
     App_MotorStop();
-    return 1U;
-}
-
-uint8_t App_MotorSetPwm(uint16_t compare)
-{
-    uint32_t period = __HAL_TIM_GET_AUTORELOAD(&htim4);
-
-    if ((uint32_t)compare > period)
-    {
-        compare = (uint16_t)period;
-    }
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, compare);
-    return 1U;
-}
-
-uint8_t App_MotorStartPwm(void)
-{
-    HAL_GPIO_WritePin(MOTOR2_GPIO_Port, MOTOR2_Pin, MOTOR2_FIXED_STATE);
-    if (HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3) != HAL_OK)
-    {
-        return 0U;
-    }
-    s_pwmStarted = 1U;
     return 1U;
 }
 
@@ -509,16 +498,4 @@ uint8_t App_MotorCreateTask(void)
 {
     return (xTaskCreate(App_MotorTask, "Motor", 320U, NULL,
                         tskIDLE_PRIORITY + 2U, NULL) == pdPASS) ? 1U : 0U;
-}
-
-uint8_t App_MotorCreateEncoderTestTask(void)
-{
-    return (xTaskCreate(App_MotorEncoderTestTask, "EncoderTest",
-                        APP_MOTOR_ENCODER_TEST_STACK_SIZE, NULL,
-                        tskIDLE_PRIORITY + 1U, NULL) == pdPASS) ? 1U : 0U;
-}
-
-int32_t App_MotorGetEncoderTestTotalCount(void)
-{
-    return s_encoderTestTotalCount;
 }

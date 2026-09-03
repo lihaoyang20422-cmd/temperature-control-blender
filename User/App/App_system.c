@@ -216,46 +216,6 @@ uint8_t App_SystemClearFault(AppFault_t fault)
     return 1U;
 }
 
-/* 已按产品方案移除未接入的系统安全监控函数，保留以下旧实现以便历史追溯。 */
-#if 0
-void App_SystemSafetyCheck(void)
-{
-    uint8_t callFaultHook = 0U;
-
-    if (App_SystemLock(portMAX_DELAY) == 0U)
-    {
-        return;
-    }
-
-    /* 任意一个共享状态字段为故障，都按整机电机故障处理。 */
-    if ((g_motorStatus.Current == APP_MOTOR_STATUS_FAULT) ||
-        (g_appData.CurrentStatus == APP_MOTOR_STATUS_FAULT))
-    {
-        g_motorStatus.Current = APP_MOTOR_STATUS_FAULT;
-        g_appData.CurrentStatus = APP_MOTOR_STATUS_FAULT;
-
-        if (s_motorFaultHandled == 0U)
-        {
-            s_motorFaultHandled = 1U;
-            callFaultHook = 1U;
-        }
-    }
-    else
-    {
-        /* 兼容外部代码直接恢复状态，允许下一次故障重新触发安全钩子。 */
-        s_motorFaultHandled = 0U;
-    }
-
-    App_SystemUnlock();
-
-    if (callFaultHook != 0U)
-    {
-        App_SystemMotorFaultHook();
-    }
-}
-
-#endif
-
 __weak void App_SystemMotorFaultHook(void)
 {
     /*

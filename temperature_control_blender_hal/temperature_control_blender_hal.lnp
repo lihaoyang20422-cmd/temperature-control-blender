@@ -34,7 +34,6 @@
 "temperature_control_blender_hal\app_buzzer.o"
 "temperature_control_blender_hal\app_main.o"
 "temperature_control_blender_hal\app_system.o"
-"temperature_control_blender_hal\app_m24c02.o"
 "temperature_control_blender_hal\app_storage.o"
 "temperature_control_blender_hal\app_oled.o"
 "temperature_control_blender_hal\app_key.o"

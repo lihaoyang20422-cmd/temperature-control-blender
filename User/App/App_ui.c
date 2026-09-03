@@ -21,7 +21,8 @@ static int16_t App_UiFilterSpeedForDisplay(int16_t currentSpeed,
      * 因而不会给电机 PID 引入额外延迟。IDLE 和 FAULT 必须立即显示 0，
      * 同时清除滤波历史，保证下一次启动不会沿用上一次运行的转速。
      */
-    if ((status != APP_MOTOR_STATUS_RUNNING) || (currentSpeed <= 0))
+    /* FAULT 必须立即显示零；IDLE 允许显示电机停止后的自然减速过程。 */
+    if ((status == APP_MOTOR_STATUS_FAULT) || (currentSpeed <= 0))
     {
         filteredSpeedScaled = 0;
         filterInitialized = 0U;
