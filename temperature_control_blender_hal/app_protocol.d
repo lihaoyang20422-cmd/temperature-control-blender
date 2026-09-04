@@ -45,3 +45,4 @@ temperature_control_blender_hal\app_protocol.o: User\App\App_storage.h
 temperature_control_blender_hal\app_protocol.o: User\App\App_ui.h
 temperature_control_blender_hal\app_protocol.o: ./User/Mid/FreeRTOS/inc/task.h
 temperature_control_blender_hal\app_protocol.o: ./User/Mid/FreeRTOS/inc/list.h
+temperature_control_blender_hal\app_protocol.o: User\App\App_motor.h

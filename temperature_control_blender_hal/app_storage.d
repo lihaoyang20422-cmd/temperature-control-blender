@@ -41,6 +41,7 @@ temperature_control_blender_hal\app_storage.o: ./User/Mid/FreeRTOS/inc/portable.
 temperature_control_blender_hal\app_storage.o: ./User/Mid/FreeRTOS/inc/deprecated_definitions.h
 temperature_control_blender_hal\app_storage.o: ./User/Mid/FreeRTOS/port/portmacro.h
 temperature_control_blender_hal\app_storage.o: ./User/Mid/FreeRTOS/inc/mpu_wrappers.h
+temperature_control_blender_hal\app_storage.o: User\App\App_motor.h
 temperature_control_blender_hal\app_storage.o: ./User/Dri/drv_m24c02.h
 temperature_control_blender_hal\app_storage.o: ./User/Mid/FreeRTOS/inc/task.h
 temperature_control_blender_hal\app_storage.o: ./User/Mid/FreeRTOS/inc/list.h

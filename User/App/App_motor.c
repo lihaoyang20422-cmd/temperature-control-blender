@@ -34,6 +34,9 @@
 #define APP_MOTOR_STARTUP_BOOST_DUTY      0.70f
 #define APP_MOTOR_STARTUP_BOOST_TIME_MS   300U
 #define APP_MOTOR_STARTUP_EXIT_RATIO      0.80f
+#define APP_MOTOR_SPEED_LIMIT_RELEASE_RPM 950.0f
+/* 触发限速后保留不高于约 1000 RPM 所需的前馈占空比，避免突然全断造成机械冲击。 */
+#define APP_MOTOR_SPEED_LIMIT_DUTY        0.62f
 
 typedef struct
 {
@@ -53,6 +56,7 @@ static uint8_t s_pwmStarted;
 static uint16_t s_startupBoostRemainingMs;
 /* 停止后仍保留编码器速度显示，连续无脉冲达到超时才清零。 */
 static uint16_t s_stopNoPulseElapsedMs;
+static uint8_t s_speedLimitActive;
 
 static int32_t App_MotorReadEncoder(void)
 {
@@ -86,6 +90,35 @@ static void App_MotorResetController(void)
     App_MotorResetSpeedEstimator();
     s_lastDuty = 0.0f;
     s_stopNoPulseElapsedMs = 0U;
+    s_speedLimitActive = 0U;
+}
+
+/*
+ * 实际转速保护：超过 1000 RPM 时立即关闭 PWM，转速降到 950 RPM 以下后
+ * 才允许恢复控制输出。使用回差可以避免在 1000 RPM 附近反复启停。
+ */
+static void App_MotorLimitDutyBySpeed(float currentRpm, float *duty)
+{
+    if (duty == NULL)
+    {
+        return;
+    }
+
+    if (currentRpm >= (float)APP_MOTOR_SPEED_LIMIT_RPM)
+    {
+        s_speedLimitActive = 1U;
+    }
+    else if ((s_speedLimitActive != 0U) &&
+             (currentRpm <= APP_MOTOR_SPEED_LIMIT_RELEASE_RPM))
+    {
+        s_speedLimitActive = 0U;
+    }
+
+    if ((s_speedLimitActive != 0U) &&
+        (*duty > APP_MOTOR_SPEED_LIMIT_DUTY))
+    {
+        *duty = APP_MOTOR_SPEED_LIMIT_DUTY;
+    }
 }
 
 static float App_MotorUpdateRpm(int32_t deltaCount)
@@ -350,6 +383,16 @@ static void App_MotorTask(void *argument)
 
         if ((status == APP_MOTOR_STATUS_RUNNING) && (targetRpm > 0.0f))
         {
+            /* 即使旧 EEPROM 或通信写入带入更大的值，控制器也只允许 1000 RPM。 */
+            if (targetRpm > (float)APP_MOTOR_SPEED_LIMIT_RPM)
+            {
+                targetRpm = (float)APP_MOTOR_SPEED_LIMIT_RPM;
+            }
+            else if (targetRpm < (float)APP_MOTOR_SPEED_MIN_RPM)
+            {
+                /* 控制层最后一道边界保护：任何绕过设置入口的非零低速目标都按 200 RPM 运行。 */
+                targetRpm = (float)APP_MOTOR_SPEED_MIN_RPM;
+            }
             s_stopNoPulseElapsedMs = 0U;
             /*
              * 电机从静止启动时短暂提供 70% 助推，克服静摩擦；转速达到目标
@@ -385,6 +428,9 @@ static void App_MotorTask(void *argument)
                 s_startupBoostRemainingMs = 0U;
                 duty = App_MotorPidStep(targetRpm, currentRpm);
             }
+
+            /* 实际转速超过安全阈值时覆盖控制输出，优先保证机械安全。 */
+            App_MotorLimitDutyBySpeed(currentRpm, &duty);
 
             if (App_MotorApplyDutyIfRunning(duty) == 0U)
             {

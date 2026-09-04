@@ -3,9 +3,10 @@
 #include "App_system.h"
 #include "App_storage.h"
 #include "App_ui.h"
+#include "App_motor.h"
 
 #define APP_PROTOCOL_TEMP_MAX           150U
-#define APP_PROTOCOL_SPEED_MAX          3000U
+#define APP_PROTOCOL_SPEED_MAX          APP_MOTOR_SPEED_LIMIT_RPM
 #define APP_PROTOCOL_TIME_SEC_MAX       7200U
 #define APP_PROTOCOL_TIME_MIN_MAX       120U
 #define APP_PROTOCOL_SECONDS_PER_MINUTE 60U
@@ -15,7 +16,11 @@ static uint8_t App_ProtocolValueValid(uint16_t reg, uint16_t value)
     switch (reg)
     {
         case APP_REG_TARGET_TEMP: return (value <= APP_PROTOCOL_TEMP_MAX) ? 1U : 0U;
-        case APP_REG_TARGET_SPEED: return (value <= APP_PROTOCOL_SPEED_MAX) ? 1U : 0U;
+        case APP_REG_TARGET_SPEED:
+            /* 0 表示停止；通信设置的非零转速必须位于安全范围。 */
+            return ((value == 0U) ||
+                    ((value >= APP_MOTOR_SPEED_MIN_RPM) &&
+                     (value <= APP_PROTOCOL_SPEED_MAX))) ? 1U : 0U;
         case APP_REG_TARGET_TIME_SEC: return (value <= APP_PROTOCOL_TIME_SEC_MAX) ? 1U : 0U;
         case APP_REG_TARGET_TIME_MIN: return (value <= APP_PROTOCOL_TIME_MIN_MAX) ? 1U : 0U;
         case APP_REG_RUN_CONTROL: return (value <= 2U) ? 1U : 0U;

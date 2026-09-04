@@ -1,5 +1,6 @@
 #include "App_storage.h"
 #include "App_system.h"
+#include "App_motor.h"
 #include "drv_m24c02.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -140,13 +141,33 @@ static uint8_t App_StorageSequenceIsNewer(uint16_t left, uint16_t right)
 
 static void App_StorageApplySettings(const AppStorageSettings_t *settings)
 {
+    int16_t targetSpeed;
+
+    targetSpeed = settings->targetSpeed;
+    if (targetSpeed < 0)
+    {
+        /* 防止异常 EEPROM 数据被解释为负转速。 */
+        targetSpeed = 0;
+    }
+    else if ((targetSpeed > 0) &&
+        (targetSpeed < (int16_t)APP_MOTOR_SPEED_MIN_RPM))
+    {
+        /* 兼容旧 EEPROM 中低于最低运行转速的非零设置。 */
+        targetSpeed = (int16_t)APP_MOTOR_SPEED_MIN_RPM;
+    }
+    else if (targetSpeed > (int16_t)APP_MOTOR_SPEED_LIMIT_RPM)
+    {
+        /* 兼容旧 EEPROM 中可能保存的更大转速，加载时统一钳位到安全上限。 */
+        targetSpeed = (int16_t)APP_MOTOR_SPEED_LIMIT_RPM;
+    }
+
     /* App_main 在调度器启动前调用，此时没有任务并发，不能阻塞等待互斥锁。 */
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)
     {
         if (App_SystemLock(portMAX_DELAY) != 0U)
         {
             g_appData.TargetTemperature = settings->targetTemperature;
-            g_appData.TargetSpeed = settings->targetSpeed;
+            g_appData.TargetSpeed = targetSpeed;
             g_appData.TargetTime = settings->targetTime;
             App_SystemUnlock();
         }
@@ -154,7 +175,7 @@ static void App_StorageApplySettings(const AppStorageSettings_t *settings)
     else
     {
         g_appData.TargetTemperature = settings->targetTemperature;
-        g_appData.TargetSpeed = settings->targetSpeed;
+        g_appData.TargetSpeed = targetSpeed;
         g_appData.TargetTime = settings->targetTime;
     }
 }
@@ -244,6 +265,20 @@ uint8_t App_StorageSetSettings(int16_t targetTemperature,
                                int16_t targetSpeed,
                                uint32_t targetTime)
 {
+    if (targetSpeed < 0)
+    {
+        targetSpeed = 0;
+    }
+    else if ((targetSpeed > 0) &&
+        (targetSpeed < (int16_t)APP_MOTOR_SPEED_MIN_RPM))
+    {
+        targetSpeed = (int16_t)APP_MOTOR_SPEED_MIN_RPM;
+    }
+    else if (targetSpeed > (int16_t)APP_MOTOR_SPEED_LIMIT_RPM)
+    {
+        targetSpeed = (int16_t)APP_MOTOR_SPEED_LIMIT_RPM;
+    }
+
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)
     {
         if (App_SystemLock(portMAX_DELAY) == 0U)

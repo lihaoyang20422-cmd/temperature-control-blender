@@ -6,10 +6,12 @@
 #include "App_ui.h"
 #include "App_imu.h"
 #include "App_heater.h"
+#include "App_motor.h"
 #include "Com_debug.h"
 
 #define APP_KEY_TARGET_TEMP_MAX       150
-#define APP_KEY_TARGET_SPEED_MAX      3000
+#define APP_KEY_TARGET_SPEED_MIN      APP_MOTOR_SPEED_MIN_RPM
+#define APP_KEY_TARGET_SPEED_MAX      APP_MOTOR_SPEED_LIMIT_RPM
 #define APP_KEY_TARGET_TIME_MAX       7200U
 
 static void App_KeyChangeFocus(void);
@@ -62,7 +64,7 @@ void App_KeyHandleEvent(const DriKeyEvent_t *event)
         (event->type == DRI_KEY_EVENT_LONG))
     {
         /* 暂时关闭按键确认短鸣，保留蜂鸣器开机音效和持续报警接口。 */
-        /* App_BuzzerBeepShort(); */
+        App_BuzzerBeepShort();
     }
 
     switch (event->key)
@@ -174,6 +176,13 @@ static void App_KeyAdjustTarget(int16_t delta)
         else if (value > APP_KEY_TARGET_SPEED_MAX)
         {
             value = APP_KEY_TARGET_SPEED_MAX;
+        }
+        else if ((value > 0) && (value < APP_KEY_TARGET_SPEED_MIN))
+        {
+            /* 0 表示停止；非零目标转速限制在 200~1000 RPM。 */
+            value = ((delta < 0) &&
+                     (g_appData.TargetSpeed <= APP_KEY_TARGET_SPEED_MIN)) ?
+                    0 : APP_KEY_TARGET_SPEED_MIN;
         }
         g_appData.TargetSpeed = (int16_t)value;
     }
